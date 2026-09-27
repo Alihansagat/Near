@@ -1,0 +1,14 @@
+Generated with built-in image_gen. Reference: user-provided heart expression sheet, inspiration only.
+
+Use case: stylized-concept. Create an original polished 2D MASCOT EXPRESSION SHEET for NEAR, an intimate couples app about feeling close across distance. User's attached reference is ONLY a reference for emotional range and flat illustrated heart creatures; do NOT copy its character design, outlines, poses, composition or props.
+Deliver one landscape sheet, 3 columns x 2 rows, SIX evenly spaced pairs, twelve full-body characters total. Each cell shows the SAME male and female companion heart mascots expressing the same mood. Reading order: joyful, loving, missing-you/sad, anxious, tired/sleepy, gently angry. No text or labels anywhere.
+ORIGINAL CHARACTER DESIGN: plump softly asymmetric rounded heart bodies with a shallow top notch and a rounded bottom, short chunky bean-shaped arms and tiny rounded feet, NO long stick limbs. Faces use small dark plum oval eyes with tiny glints, expressive floating eyebrows and a tiny mouth, NO huge white ring eyes like reference. Subtle peach cheek spots. Flat refined editorial sticker illustration with a consistent medium-thick plum #39343C outline, rounded stroke joins, mostly solid color with at most one simple cel-shaded accent; NO 3D, no fur, no glossy rendering.
+Male: deep dusty berry #A94762 heart body, small distinctive swept crest integrated into left upper lobe, tiny sage neckerchief. Female: warm muted rose #D98798 heart body, small cream daisy hair clip at upper right lobe, subtle single eyelash. Both equally charming and visually equal size, not sexualized. These identity details stay consistent in ALL six cells.
+Mood acting:
+1 joy: open smiles, little raised hands, buoyant feet.
+2 love: soft closed eyes, gently leaning against one another, holding hands, one tiny floating heart between them.
+3 missing-you: lowered brows, one small tear, hands close to chest, wistful and tender.
+4 anxious: pinched brows, small uncertain mouth, hands clasped at belly.
+5 tired: droopy eyelids, yawning mouth, relaxed slumped posture.
+6 gently angry: lowered brows, small pout, short arms folded, no weapons.
+Warm off-white background #FBF8F5 matching NEAR UI, extremely clean generous spacing, no panels, no borders, no titles, no shadows. Each pair fully contained in its own grid cell with clear whitespace separating cells so the sheet is useful for later asset extraction. Strong small-avatar readability, professional cohesive original mascot system. Wide landscape 1536x1024 or equivalent.
