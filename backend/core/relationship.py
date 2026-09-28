@@ -75,9 +75,21 @@ class PlaceSerializer(serializers.ModelSerializer):
 
 
 class WishlistSerializer(serializers.ModelSerializer):
+    report_photo_url = serializers.SerializerMethodField()
+    report_photo = serializers.ImageField(required=False, write_only=True)
+
+    def get_report_photo_url(self, obj):
+        return f'/api/relationship-media/wish/{obj.pk}/' if obj.report_photo else None
+
+    def validate_report_photo(self, value):
+        if value.size > 10 * 1024 * 1024:
+            raise serializers.ValidationError('Upload a photo up to 10 MB.')
+        return value
+
     class Meta:
         model = WishlistItem
-        fields = ['id', 'title', 'completed']
+        fields = ['id', 'title', 'completed', 'report', 'report_photo', 'report_photo_url', 'completed_at']
+        read_only_fields = ['completed_at']
 
 
 class CoupleViewSet(viewsets.ModelViewSet):
@@ -128,6 +140,11 @@ class MessageViewSet(CoupleViewSet):
             raise serializers.ValidationError('Connect your partner first.')
         serializer.save(couple=couple, sender=self.request.user)
 
+    @action(detail=False, methods=['get'], url_path='latest-hug')
+    def latest_hug(self, request):
+        message = self.get_queryset().filter(text='🫂').exclude(sender=request.user).first()
+        return Response({'id': message.pk if message else None})
+
     @action(detail=False, methods=['post'])
     def hug(self, request):
         serializer = self.get_serializer(data={'text': '🫂'})
@@ -143,6 +160,11 @@ class PlaceViewSet(CoupleViewSet):
 class WishlistViewSet(CoupleViewSet):
     serializer_class = WishlistSerializer
 
+    def perform_update(self, serializer):
+        from django.utils import timezone
+        completed = serializer.validated_data.get('completed', serializer.instance.completed)
+        serializer.save(completed_at=(serializer.instance.completed_at or timezone.now()) if completed else None)
+
 
 class RelationshipMediaView(APIView):
     def get(self, request, kind, pk):
@@ -150,6 +172,11 @@ class RelationshipMediaView(APIView):
         if kind == 'attachment':
             obj = get_object_or_404(EnvelopeAttachment, pk=pk, envelope__couple=couple)
             file = obj.file
+        elif kind == 'wish':
+            obj = get_object_or_404(WishlistItem, pk=pk, couple=couple)
+            if not obj.report_photo:
+                raise Http404
+            file = obj.report_photo
         elif kind == 'story':
             obj = get_object_or_404(StoryEntry, pk=pk, couple=couple)
             if not obj.photo:

@@ -36,6 +36,9 @@ REST_FRAMEWORK = {
 SIMPLE_JWT = {'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15), 'REFRESH_TOKEN_LIFETIME': timedelta(days=14), 'ROTATE_REFRESH_TOKENS': True, 'BLACKLIST_AFTER_ROTATION': True}
 MEDIA_ROOT = BASE_DIR / 'media'
 MEDIA_URL = '/media/'
+# Keep small private uploads durable across Render's ephemeral restarts.
+DATABASE_MEDIA_LIMIT_BYTES = 200 * 1024 * 1024
+STORAGES = {'default': {'BACKEND': 'core.storage.DatabaseMediaStorage'}, 'staticfiles': {'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage'}}
 if os.getenv('S3_BUCKET'):
     STORAGES = {'default': {'BACKEND': 'storages.backends.s3.S3Storage', 'OPTIONS': {'bucket_name': os.environ['S3_BUCKET'], 'region_name': os.getenv('AWS_DEFAULT_REGION', 'auto'), 'endpoint_url': os.getenv('AWS_S3_ENDPOINT_URL'), 'access_key': os.getenv('AWS_ACCESS_KEY_ID'), 'secret_key': os.getenv('AWS_SECRET_ACCESS_KEY'), 'default_acl': None, 'querystring_auth': True, 'querystring_expire': 300, 'file_overwrite': False}}, 'staticfiles': {'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage'}}
 CORS_ALLOWED_ORIGINS = [origin.strip() for origin in os.getenv('CORS_ALLOWED_ORIGINS', '').split(',') if origin.strip()]

@@ -4,6 +4,7 @@ import 'api.dart';
 import 'app_state.dart';
 import 'screens.dart';
 import 'theme.dart';
+import 'animations.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -53,7 +54,7 @@ class AppGate extends StatelessWidget {
                 ? const AuthScreen()
                 : !state.paired
                     ? const PairScreen()
-                    : const MainShell()),
+                    : const PartnerHugListener(child: MainShell())),
       ]),
     );
   }

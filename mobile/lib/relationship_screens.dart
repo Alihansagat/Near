@@ -1,7 +1,10 @@
 import 'dart:async';
-import 'dart:convert';
+import 'dart:typed_data';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'life_screens.dart';
 import 'package:provider/provider.dart';
 import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
@@ -83,6 +86,18 @@ class RelationshipHub extends StatelessWidget {
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () =>
                     openPage(context, RelationshipScreen(kind: kind)))),
+      Card(
+          child: ListTile(
+              leading: const Icon(Icons.celebration_outlined),
+              title: const Text('Important dates'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => openPage(context, const ImportantDatesScreen()))),
+      Card(
+          child: ListTile(
+              leading: const Icon(Icons.auto_awesome_outlined),
+              title: const Text('Near Recap'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => openPage(context, const RecapScreen()))),
       gap(),
     ]);
   }
@@ -202,22 +217,30 @@ class _RelationshipScreenState extends State<RelationshipScreen> {
                           openPage(context, EnvelopeDetail(envelope: row))))
             else if (widget.kind == 'wishlist')
               CozyCard(
-                  child: CheckboxListTile(
-                      title: Text(row['title'],
-                          style: TextStyle(
-                              decoration: row['completed']
-                                  ? TextDecoration.lineThrough
-                                  : null)),
-                      value: row['completed'],
-                      onChanged: state.busy
-                          ? null
-                          : (value) async {
-                              if (await state.run(() => state.api.patch(
-                                  'wishlist/${row['id']}/',
-                                  {'completed': value}))) {
-                                await load();
-                              }
-                            }))
+                  child: Column(children: [
+                CheckboxListTile(
+                    title: Text(row['title']),
+                    value: row['completed'],
+                    onChanged: state.busy
+                        ? null
+                        : (value) async {
+                            if (await state.run(() => state.api.patch(
+                                'wishlist/${row['id']}/',
+                                {'completed': value}))) {
+                              await load();
+                            }
+                          }),
+                if ((row['report'] ?? '').isNotEmpty) Text(row['report']),
+                if (row['report_photo_url'] != null)
+                  privateImage(state.api, row['report_photo_url']),
+                TextButton.icon(
+                    icon: const Icon(Icons.add_photo_alternate_outlined),
+                    label: const Text('Add completion report'),
+                    onPressed: () async {
+                      await openWishReport(context, row);
+                      await load();
+                    }),
+              ]))
             else if (widget.kind == 'messages')
               CozyCard(
                   child: Column(
@@ -733,8 +756,7 @@ class OurMap extends StatelessWidget {
                 .map(
                     (p) => '${p['title']}: ${p['latitude']}, ${p['longitude']}')
                 .join('; '),
-            child:
-                AspectRatio(aspectRatio: 2, child: WorldMap(points: points))),
+            child: SizedBox(height: 420, child: WorldMap(points: points))),
         for (var i = 0; i < points.length; i++)
           Text('${i + 1}. ${points[i]['title']}'),
       ],
@@ -750,70 +772,93 @@ class WorldMap extends StatefulWidget {
 }
 
 class _WorldMapState extends State<WorldMap> {
-  late final Future<List<dynamic>> contours = rootBundle
-      .loadString('assets/maps/land.json')
-      .then((value) => jsonDecode(value) as List<dynamic>);
+  final controller = MapController();
   @override
-  Widget build(BuildContext context) => FutureBuilder<List<dynamic>>(
-        future: contours,
-        builder: (context, snapshot) => snapshot.hasData
-            ? CustomPaint(painter: PlacesPainter(widget.points, snapshot.data!))
-            : Center(
-                child: Text(
-                    snapshot.hasError ? 'Map unavailable' : 'Loading map…')),
-      );
-}
-
-class PlacesPainter extends CustomPainter {
-  final List<Map> points;
-  final List<dynamic> land;
-  PlacesPainter(this.points, this.land);
-  @override
-  void paint(Canvas canvas, Size size) {
-    final grid = Paint()
-      ..color = rose
-      ..strokeWidth = 1;
-    for (var i = 0; i <= 6; i++) {
-      canvas.drawLine(Offset(i * size.width / 6, 0),
-          Offset(i * size.width / 6, size.height), grid);
-    }
-    for (var i = 0; i <= 4; i++) {
-      canvas.drawLine(Offset(0, i * size.height / 4),
-          Offset(size.width, i * size.height / 4), grid);
-    }
-    Offset project(num longitude, num latitude) => Offset(
-        12 + (longitude + 180) / 360 * (size.width - 24),
-        12 + (90 - latitude) / 180 * (size.height - 24));
-    final landPaint = Paint()..color = const Color(0xFFE4D1D6);
-    for (final ring in land) {
-      final path = Path();
-      for (var i = 0; i < (ring as List).length; i++) {
-        final point = project(ring[i][0] as num, ring[i][1] as num);
-        if (i == 0) {
-          path.moveTo(point.dx, point.dy);
-        } else {
-          path.lineTo(point.dx, point.dy);
-        }
-      }
-      canvas.drawPath(path..close(), landPaint);
-    }
-    for (var i = 0; i < points.length; i++) {
-      final p = points[i];
-      final position = Offset(
-          12 + ((p['longitude'] as num) + 180) / 360 * (size.width - 24),
-          12 + (90 - (p['latitude'] as num)) / 180 * (size.height - 24));
-      canvas.drawCircle(position, 10, Paint()..color = coral);
-      final label = TextPainter(
-          text: TextSpan(
-              text: '${i + 1}',
-              style: const TextStyle(
-                  color: Colors.white, fontSize: 11, fontFamily: 'Roboto')),
-          textDirection: TextDirection.ltr)
-        ..layout();
-      label.paint(canvas, position - Offset(label.width / 2, label.height / 2));
-    }
+  void dispose() {
+    controller.dispose();
+    super.dispose();
   }
 
   @override
-  bool shouldRepaint(covariant PlacesPainter oldDelegate) => true;
+  Widget build(BuildContext context) {
+    final points = widget.points
+        .map((p) => LatLng((p['latitude'] as num).toDouble(),
+            (p['longitude'] as num).toDouble()))
+        .toList();
+    return ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Stack(children: [
+          FlutterMap(
+              mapController: controller,
+              options: MapOptions(
+                initialCenter:
+                    points.isEmpty ? const LatLng(43.24, 76.92) : points.first,
+                initialZoom: points.length == 1 ? 13 : 3,
+                initialCameraFit: points.length > 1
+                    ? CameraFit.coordinates(
+                        coordinates: points,
+                        padding: const EdgeInsets.all(45),
+                        maxZoom: 15)
+                    : null,
+                maxZoom: 19,
+              ),
+              children: [
+                TileLayer(
+                    urlTemplate:
+                        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    userAgentPackageName: 'app.near.couples'),
+                MarkerLayer(markers: [
+                  for (var i = 0; i < points.length; i++)
+                    Marker(
+                        point: points[i],
+                        width: 48,
+                        height: 48,
+                        child: Tooltip(
+                            message:
+                                widget.points[i]['title'] as String? ?? 'Place',
+                            child: IconButton(
+                                onPressed: () => showModalBottomSheet<void>(
+                                    context: context,
+                                    builder: (_) => SafeArea(
+                                        child: Padding(
+                                            padding: const EdgeInsets.all(24),
+                                            child: Text(
+                                                widget.points[i]['title']
+                                                        as String? ??
+                                                    'Place',
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .titleLarge)))),
+                                icon: const Icon(Icons.location_on,
+                                    color: coral, size: 38))))
+                ]),
+                RichAttributionWidget(attributions: [
+                  TextSourceAttribution('OpenStreetMap contributors',
+                      onTap: () => launchUrl(
+                          Uri.parse('https://www.openstreetmap.org/copyright')))
+                ]),
+              ]),
+          Positioned(
+              top: 8,
+              right: 8,
+              child: Column(children: [
+                FloatingActionButton.small(
+                    heroTag: null,
+                    onPressed: () => controller.move(controller.camera.center,
+                        (controller.camera.zoom + 1).clamp(1, 19)),
+                    child: const Icon(Icons.add)),
+                const SizedBox(height: 8),
+                FloatingActionButton.small(
+                    heroTag: null,
+                    onPressed: () => controller.move(controller.camera.center,
+                        (controller.camera.zoom - 1).clamp(1, 19)),
+                    child: const Icon(Icons.remove)),
+                const SizedBox(height: 8),
+                FloatingActionButton.small(
+                    heroTag: null,
+                    onPressed: () => controller.rotate(0),
+                    child: const Icon(Icons.explore_outlined)),
+              ])),
+        ]));
+  }
 }

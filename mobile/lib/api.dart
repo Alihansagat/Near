@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'location_sharing.dart';
 
@@ -10,9 +11,9 @@ class Api {
   );
   final Dio dio = Dio(BaseOptions(
     baseUrl: baseUrl,
-    connectTimeout: const Duration(seconds: 15),
-    receiveTimeout: const Duration(seconds: 30),
-    sendTimeout: const Duration(seconds: 30),
+    connectTimeout: const Duration(seconds: 90),
+    receiveTimeout: const Duration(seconds: 90),
+    sendTimeout: const Duration(seconds: 90),
   ));
   final FlutterSecureStorage storage = const FlutterSecureStorage();
   String? access;
@@ -139,11 +140,11 @@ class Api {
     await dio.delete<dynamic>(path);
   }
 
-  Future<void> upload(String filePath) async {
+  Future<void> upload(XFile file) async {
     await dio.post<dynamic>('daily/photo/',
         data: FormData.fromMap({
-          'photo':
-              await MultipartFile.fromFile(filePath, filename: 'moment.jpg'),
+          'photo': MultipartFile.fromBytes(await file.readAsBytes(),
+              filename: file.name),
         }));
   }
 

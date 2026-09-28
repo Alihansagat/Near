@@ -1,18 +1,24 @@
 import 'package:flutter/material.dart';
+import 'animations.dart';
 
 const coral = Color(0xFFA94762);
 const rose = Color(0xFFF2DFE2);
-const beige = Color(0xFFFBF8F5);
+const beige = Color(0xFFF6F3F0);
 const slate = Color(0xFF39343C);
 
 ThemeData nearTheme() => ThemeData(
       useMaterial3: true,
+      fontFamilyFallback: const ['Apple Color Emoji', 'sans-serif'],
+      pageTransitionsTheme: const PageTransitionsTheme(builders: {
+        TargetPlatform.android: FadeForwardsPageTransitionsBuilder(),
+        TargetPlatform.iOS: FadeForwardsPageTransitionsBuilder(),
+      }),
       scaffoldBackgroundColor: beige,
       colorScheme: ColorScheme.fromSeed(
           seedColor: coral, primary: coral, surface: beige),
       textTheme: const TextTheme(
         headlineLarge: TextStyle(
-            fontSize: 36,
+            fontSize: 30,
             fontWeight: FontWeight.w600,
             color: slate,
             letterSpacing: -1),
@@ -30,6 +36,13 @@ ThemeData nearTheme() => ThemeData(
           indicatorColor: rose,
           labelTextStyle: WidgetStateProperty.all(
               const TextStyle(fontSize: 11, fontWeight: FontWeight.w600))),
+      cardTheme: CardThemeData(
+        elevation: 0,
+        color: const Color(0xFFFCFAF8),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: const BorderSide(color: Color(0xFFEAE3DF))),
+      ),
       chipTheme: ChipThemeData(
           side: BorderSide.none,
           backgroundColor: beige,
@@ -55,14 +68,15 @@ class CozyCard extends StatelessWidget {
   final Color color;
   const CozyCard({super.key, required this.child, this.color = Colors.white});
   @override
-  Widget build(BuildContext context) => Container(
+  Widget build(BuildContext context) => GentleEntrance(
+          child: Container(
         width: double.infinity,
         margin: const EdgeInsets.only(bottom: 18),
-        padding: const EdgeInsets.all(22),
+        padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
             color: color,
             borderRadius: BorderRadius.circular(26),
             border: Border.all(color: rose.withValues(alpha: .5))),
         child: Material(type: MaterialType.transparency, child: child),
-      );
+      ));
 }

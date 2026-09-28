@@ -8,6 +8,7 @@ class AppState extends ChangeNotifier {
     api.onSessionExpired = () {
       me = null;
       home = null;
+      life = null;
       notifyListeners();
     };
   }
@@ -16,6 +17,7 @@ class AppState extends ChangeNotifier {
   String? error;
   Map<String, dynamic>? me;
   Map<String, dynamic>? home;
+  Map<String, dynamic>? life;
   List<dynamic> dates = [];
   List<dynamic> countdowns = [];
   List<dynamic> moments = [];
@@ -57,6 +59,7 @@ class AppState extends ChangeNotifier {
     me = await api.get('me/');
     if (paired) {
       home = await api.get('home/');
+      life = await api.get('life/');
       countdowns = [];
       String? countdownPath = 'meetings/';
       while (countdownPath != null) {
@@ -138,6 +141,7 @@ class AppState extends ChangeNotifier {
     } finally {
       me = null;
       home = null;
+      life = null;
       dates = [];
       moments = [];
       countdowns = [];

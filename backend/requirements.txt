@@ -6,4 +6,5 @@ django-storages[s3]>=1.14,<2
 django-cors-headers>=4.7,<5
 dj-database-url>=2.3,<3
 Pillow>=12,<13
+pillow-heif>=1.1,<2
 gunicorn>=23,<24

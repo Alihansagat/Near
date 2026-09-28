@@ -211,6 +211,9 @@ class MapPlace(models.Model):
 
 
 class WishlistItem(models.Model):
+    report = models.TextField(max_length=5000, blank=True)
+    report_photo = models.ImageField(upload_to=relationship_media_path, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
     couple = models.ForeignKey(Couple, on_delete=models.CASCADE)
     title = models.CharField(max_length=200)
     completed = models.BooleanField(default=False)
@@ -227,3 +230,37 @@ class DailyQuestionChoice(models.Model):
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=['couple', 'question'], name='one_question_choice_per_couple_day')]
+
+
+class ImportantDate(models.Model):
+    couple = models.ForeignKey(Couple, on_delete=models.CASCADE)
+    title = models.CharField(max_length=160)
+    date = models.DateField()
+    yearly = models.BooleanField(default=True)
+    remind_days = models.PositiveSmallIntegerField(default=1)
+
+    class Meta:
+        ordering = ['date', 'id']
+
+
+class ModePeriod(models.Model):
+    couple = models.ForeignKey(Couple, on_delete=models.CASCADE)
+    mode = models.CharField(max_length=8, choices=[('apart', 'Apart'), ('together', 'Together')])
+    started_on = models.DateField()
+    ended_on = models.DateField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['started_on', 'id']
+        constraints = [models.UniqueConstraint(fields=['couple'], condition=Q(ended_on=None), name='one_active_mode')]
+
+
+class MediaBudget(models.Model):
+    """Single lock row serializes media quota checks across uploads."""
+    pass
+
+
+class StoredMedia(models.Model):
+    name = models.CharField(max_length=512, unique=True)
+    data = models.BinaryField()
+    size = models.PositiveIntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)

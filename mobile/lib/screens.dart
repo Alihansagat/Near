@@ -9,6 +9,7 @@ import 'theme.dart';
 import 'mascot.dart';
 import 'relationship_screens.dart';
 import 'distance.dart';
+import 'life_screens.dart';
 
 String dateLabel(dynamic value) => DateFormat('MMM d, yyyy · HH:mm')
     .format(DateTime.parse(value as String).toLocal());
@@ -257,7 +258,7 @@ class PageBody extends StatelessWidget {
                 constraints: const BoxConstraints(maxWidth: 680),
                 child: ListView(
                   physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.all(16),
                   children: children,
                 ))));
   }
@@ -351,7 +352,7 @@ class HomeScreen extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
                 color: rose, borderRadius: BorderRadius.circular(30)),
-            child: Text('♥  ${home['days_together']} days together',
+            child: Text('♥  ${home['days_together']} days of us',
                 style: const TextStyle(
                     color: coral, fontWeight: FontWeight.w600))),
         gap(24),
@@ -416,44 +417,41 @@ class HomeScreen extends StatelessWidget {
                 : "${home['days_apart']} days loving from afar",
             style: const TextStyle(fontSize: 12, color: coral)),
       ])),
+      const LifeCard(),
       Container(
           margin: const EdgeInsets.only(bottom: 18),
           padding: const EdgeInsets.all(26),
           decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                  colors: [Color(0xFFA94762), Color(0xFF76364F)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight),
+              color: const Color(0xFFECE3E4),
               borderRadius: BorderRadius.circular(28)),
           child: Column(children: [
             const Text('THE NEXT HUG',
-                style: TextStyle(
-                    color: Colors.white70, letterSpacing: 3, fontSize: 11)),
+                style: TextStyle(color: slate, letterSpacing: 3, fontSize: 11)),
             gap(12),
             Text(home['days_until_meeting']?.toString().padLeft(2, '0') ?? '—',
                 style: const TextStyle(
-                    fontSize: 76,
+                    fontSize: 58,
                     height: 1.1,
                     fontWeight: FontWeight.w300,
-                    color: Colors.white)),
+                    color: slate)),
             Text(
                 home['meeting'] == null
                     ? 'Something to look forward to'
                     : 'DAYS UNTIL WE MEET',
                 style: const TextStyle(
-                    color: Colors.white, letterSpacing: 1.5, fontSize: 12)),
+                    color: slate, letterSpacing: 1.5, fontSize: 12)),
             gap(12),
             if (home['meeting'] != null)
               Text(
                   "${home['meeting']['title']} · ${DateFormat('MMM d').format(DateTime.parse(home['meeting']['target_date']))}",
-                  style: const TextStyle(color: Colors.white70)),
+                  style: const TextStyle(color: slate)),
             if (home['meeting'] != null)
-              CountdownActions(event: home['meeting'] as Map, light: true),
+              CountdownActions(event: home['meeting'] as Map),
             if (home['meeting'] == null)
               TextButton(
                   onPressed: () => addCountdown(context),
                   child: const Text('Add our next meeting →',
-                      style: TextStyle(color: Colors.white))),
+                      style: TextStyle(color: slate))),
           ])),
       const RelationshipHub(),
       PhotoCard(
@@ -780,7 +778,7 @@ class PhotoCard extends StatelessWidget {
                               maxHeight: 2048,
                               imageQuality: 90);
                           if (picked == null) return;
-                          await state.api.upload(picked.path);
+                          await state.api.upload(picked);
                           await state.reload();
                         }))),
         const SizedBox(width: 12),
@@ -1049,7 +1047,7 @@ class _AlbumScreenState extends State<AlbumScreen> {
                 child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 680),
                     child: ListView(
-                        padding: const EdgeInsets.all(24),
+                        padding: const EdgeInsets.all(16),
                         physics: const AlwaysScrollableScrollPhysics(),
                         children: [
                           SectionHeading(

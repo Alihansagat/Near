@@ -1,7 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenRefreshView
-from core import views, relationship
+from core import views, relationship, milestones
 router = DefaultRouter()
 router.register('dates', views.VirtualDateViewSet, basename='date')
 router.register('meetings', views.MeetingViewSet, basename='meeting')
@@ -10,7 +10,10 @@ router.register('story', relationship.StoryViewSet, basename='story')
 router.register('messages', relationship.MessageViewSet, basename='message')
 router.register('places', relationship.PlaceViewSet, basename='place')
 router.register('wishlist', relationship.WishlistViewSet, basename='wishlist')
+router.register('important-dates', milestones.ImportantDateViewSet, basename='important-date')
 urlpatterns = [
+    path('api/life/', milestones.LifeView.as_view()),
+    path('api/recap/', milestones.RecapView.as_view()),
     path('health/', views.health),
     path('api/relationship-media/<str:kind>/<int:pk>/', relationship.RelationshipMediaView.as_view()),
     path('api/auth/register/', views.RegisterView.as_view()),

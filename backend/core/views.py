@@ -1,3 +1,4 @@
+from pillow_heif import register_heif_opener
 from datetime import timedelta
 from io import BytesIO
 from zoneinfo import ZoneInfo
@@ -19,6 +20,8 @@ from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .models import User, Couple, MeetingCountdown, DailyPhotoPrompt, DailyPhotoSubmission, DailyQuestion, DailyAnswer, VirtualDate, invite_code, DailyQuestionChoice
 from .serializers import UserSerializer, RegisterSerializer, CoupleSerializer, DailyPhotoSubmissionSerializer, DailyAnswerSerializer, VirtualDateSerializer, MeetingSerializer
+
+register_heif_opener(thumbnails=False)
 
 
 @api_view(['GET'])
@@ -152,7 +155,8 @@ def question_details(couple, question):
 
 def daily_payload(request, couple, day):
     photos = list(DailyPhotoSubmission.objects.filter(couple=couple, day=day))
-    question = DailyQuestion.objects.filter(date=day).first()
+    from .question_content import ensure_daily_question
+    question = ensure_daily_question(day) if day == day_for(couple) else DailyQuestion.objects.filter(date=day).first()
     answers = list(DailyAnswer.objects.filter(couple=couple, question=question)) if question else []
     photo_reveal, answer_reveal = both(couple, photos), both(couple, answers)
     prompt = DailyPhotoPrompt.objects.filter(date=day).first()
@@ -220,6 +224,8 @@ class ChooseQuestionCategoryView(APIView):
         couple = Couple.objects.select_for_update().get(pk=couple_for(request.user).pk)
         category = serializers.ChoiceField(choices=list(QUESTIONS)).run_validation(request.data.get('category'))
         day = day_for(couple)
+        if category_question(category, day) is None:
+            raise ValidationError('You have explored every question in this collection. More questions are needed.')
         question, _ = DailyQuestion.objects.get_or_create(date=day, defaults={
             'category': 'random', 'question_text': category_question('random', day),
         })
