@@ -11,6 +11,7 @@ router.register('messages', relationship.MessageViewSet, basename='message')
 router.register('places', relationship.PlaceViewSet, basename='place')
 router.register('wishlist', relationship.WishlistViewSet, basename='wishlist')
 urlpatterns = [
+    path('health/', views.health),
     path('api/relationship-media/<str:kind>/<int:pk>/', relationship.RelationshipMediaView.as_view()),
     path('api/auth/register/', views.RegisterView.as_view()),
     path('api/auth/token/', views.LoginView.as_view()),

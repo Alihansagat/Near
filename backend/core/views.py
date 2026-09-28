@@ -21,6 +21,12 @@ from .models import User, Couple, MeetingCountdown, DailyPhotoPrompt, DailyPhoto
 from .serializers import UserSerializer, RegisterSerializer, CoupleSerializer, DailyPhotoSubmissionSerializer, DailyAnswerSerializer, VirtualDateSerializer, MeetingSerializer
 
 
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def health(request):
+    return Response({'status': 'ok'})
+
+
 def couple_for(user):
     if not user.couple_id:
         raise ValidationError({'couple': 'Create or join a couple first.'})
