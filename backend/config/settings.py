@@ -40,6 +40,7 @@ if os.getenv('S3_BUCKET'):
     STORAGES = {'default': {'BACKEND': 'storages.backends.s3.S3Storage', 'OPTIONS': {'bucket_name': os.environ['S3_BUCKET'], 'region_name': os.getenv('AWS_DEFAULT_REGION', 'auto'), 'endpoint_url': os.getenv('AWS_S3_ENDPOINT_URL'), 'access_key': os.getenv('AWS_ACCESS_KEY_ID'), 'secret_key': os.getenv('AWS_SECRET_ACCESS_KEY'), 'default_acl': None, 'querystring_auth': True, 'querystring_expire': 300, 'file_overwrite': False}}, 'staticfiles': {'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage'}}
 CORS_ALLOWED_ORIGINS = [origin.strip() for origin in os.getenv('CORS_ALLOWED_ORIGINS', '').split(',') if origin.strip()]
 SECURE_SSL_REDIRECT = not DEBUG
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
 SECURE_HSTS_SECONDS = 0 if DEBUG else 31536000
