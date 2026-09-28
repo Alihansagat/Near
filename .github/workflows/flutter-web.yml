@@ -15,7 +15,7 @@ jobs:
           channel: stable
       - run: flutter pub get
         working-directory: mobile
-      - run: flutter build web --release --dart-define=API_BASE_URL=${{ vars.API_BASE_URL }}
+      - run: flutter build web --release --base-href /Near/ --dart-define=API_BASE_URL=${{ vars.API_BASE_URL }}
         working-directory: mobile
       - uses: actions/upload-pages-artifact@v3
         with:
