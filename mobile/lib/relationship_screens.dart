@@ -722,9 +722,8 @@ class OurMap extends StatelessWidget {
           child: const Text('Enter coordinates manually')),
       if (me['latitude'] != null)
         TextButton(
-            onPressed: state.busy
-                ? null
-                : () => state.run(state.stopSharingLocation),
+            onPressed:
+                state.busy ? null : () => state.run(state.stopSharingLocation),
             child: const Text('Stop sharing location')),
       ...[
         const Text('Our places around the world'),

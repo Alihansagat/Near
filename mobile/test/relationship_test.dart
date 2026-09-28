@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:near/api.dart';
 import 'package:near/app_state.dart';
+import 'package:near/distance.dart';
 import 'package:near/relationship_screens.dart';
 import 'rituals_test.dart' as fixtures;
 

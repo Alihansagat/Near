@@ -36,6 +36,7 @@ class LocationApi extends Api {
       if (users[key]['id'] == me['id']) users[key] = {...users[key], ...data};
     }
   }
+
   @override
   Future<Map<String, dynamic>> get(String path) async {
     if (path == 'me/') return me;
@@ -49,17 +50,20 @@ class LocationApi extends Api {
 
 void main() {
   test('Shared distance uses both coordinates and handles missing partner', () {
-    expect(sharedDistanceKm({'latitude': 43.2389, 'longitude': 76.8897},
-        {'latitude': 51.1694, 'longitude': 71.4491}), closeTo(972, 2));
+    expect(
+        sharedDistanceKm({'latitude': 43.2389, 'longitude': 76.8897},
+            {'latitude': 51.1694, 'longitude': 71.4491}),
+        closeTo(972, 2));
     expect(sharedDistanceKm({'latitude': 43.2, 'longitude': 76.8}, {}), isNull);
   });
 
   testWidgets('Home shares current location and replaces saved distance',
       (tester) async {
     final fixture = fixtures.fixture();
-    fixture.home!['couple']['user_2'].addAll(
-        {'latitude': 51.1694, 'longitude': 71.4491});
-    final api = LocationApi(fixture.me, fixture.home!);
+    fixture.home!['couple']['user_2']
+        .addAll({'latitude': 51.1694, 'longitude': 71.4491});
+    final api = LocationApi(Map<String, dynamic>.from(fixture.me!),
+        Map<String, dynamic>.from(fixture.home!));
     final state = AppState(api)
       ..me = fixture.me
       ..home = fixture.home
@@ -81,7 +85,8 @@ void main() {
   testWidgets('Permission failure is explained without changing distance',
       (tester) async {
     final fixture = fixtures.fixture();
-    final api = LocationApi(fixture.me, fixture.home!);
+    final api = LocationApi(Map<String, dynamic>.from(fixture.me!),
+        Map<String, dynamic>.from(fixture.home!));
     final state = AppState(api)
       ..me = fixture.me
       ..home = fixture.home

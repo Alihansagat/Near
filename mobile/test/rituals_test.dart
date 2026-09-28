@@ -104,7 +104,8 @@ void main() {
     await tester.pumpWidget(
         RepaintBoundary(key: key, child: app(fixture(), const MainShell())));
     await tester.runAsync(() => precacheImage(
-        const AssetImage('assets/mascots/hearts-moods.png'), key.currentContext!));
+        const AssetImage('assets/mascots/hearts-moods.png'),
+        key.currentContext!));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
     final boundary =
