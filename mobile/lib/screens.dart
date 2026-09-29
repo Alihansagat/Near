@@ -183,6 +183,7 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
   int tab = 0;
+  final pages = PageController();
   Timer? refreshTimer;
   bool foreground = true;
   @override
@@ -200,6 +201,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
   @override
   void dispose() {
     refreshTimer?.cancel();
+    pages.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -215,17 +217,20 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        body: SafeArea(
-            child: const [
-          HomeScreen(),
-          DailyPhotoScreen(),
-          DatesScreen(),
-          CountdownsScreen(),
-          QuestionsScreen()
-        ][tab]),
+        body: SafeArea(child: PageView.builder(
+          controller: pages,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: 5,
+          itemBuilder: (_, index) => _KeptTab(child: const [
+            HomeScreen(), DailyPhotoScreen(), DatesScreen(), CountdownsScreen(), QuestionsScreen(),
+          ][index]),
+        )),
         bottomNavigationBar: NavigationBar(
           selectedIndex: tab,
-          onDestinationSelected: (value) => setState(() => tab = value),
+          onDestinationSelected: (value) {
+            pages.jumpToPage(value);
+            setState(() => tab = value);
+          },
           destinations: const [
             NavigationDestination(
                 icon: Icon(Icons.home_outlined),
@@ -243,6 +248,19 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
           ],
         ),
       );
+}
+
+class _KeptTab extends StatefulWidget {
+  final Widget child;
+  const _KeptTab({required this.child});
+  @override
+  State<_KeptTab> createState() => _KeptTabState();
+}
+class _KeptTabState extends State<_KeptTab> with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+  @override
+  Widget build(BuildContext context) { super.build(context); return widget.child; }
 }
 
 class PageBody extends StatelessWidget {

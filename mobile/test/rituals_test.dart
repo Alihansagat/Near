@@ -88,6 +88,22 @@ void main() {
     }
     await tester.pumpWidget(const SizedBox());
   });
+  testWidgets('Switching tabs keeps revealed answers visible', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(app(fixture(), const MainShell()));
+    await tester.tap(find.text('Questions').last);
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Reveal our answers').last);
+    await tester.tap(find.text('Reveal our answers').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Home').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Questions').last);
+    await tester.pumpAndSettle();
+    expect(find.textContaining('northern lights'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+  });
   testWidgets('Home design preview', (tester) async {
     await tester.binding.setSurfaceSize(const Size(430, 1500));
     addTearDown(() => tester.binding.setSurfaceSize(null));
