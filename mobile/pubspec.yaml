@@ -25,6 +25,10 @@ dev_dependencies:
   flutter_lints: ^5.0.0
 flutter:
   uses-material-design: true
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter.ttf
   assets:
     - assets/mascots/hearts-moods.png
     - assets/maps/land.json

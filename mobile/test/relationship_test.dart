@@ -99,6 +99,13 @@ AppState stateWith(RelationshipApi api) {
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  setUpAll(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+      const MethodChannel('plugins.flutter.io/path_provider'),
+      (call) async => Directory.systemTemp.path,
+    );
+  });
   test('Distance handles same location, known cities and antipodes', () {
     expect(distanceKm(43, 76, 43, 76), 0);
     expect(distanceKm(40.7128, -74.006, 34.0522, -118.2437), closeTo(3936, 5));
@@ -212,9 +219,9 @@ void main() {
   testWidgets('New feature visual previews', (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
-    final font = File('/System/Library/Fonts/Supplemental/Arial.ttf');
+    final font = File('assets/fonts/Inter.ttf');
     if (font.existsSync()) {
-      final loader = FontLoader('Roboto')
+      final loader = FontLoader('Inter')
         ..addFont(Future.value(ByteData.sublistView(font.readAsBytesSync())));
       await tester.runAsync(loader.load);
     }

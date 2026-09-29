@@ -91,9 +91,9 @@ void main() {
   testWidgets('Home design preview', (tester) async {
     await tester.binding.setSurfaceSize(const Size(430, 1500));
     addTearDown(() => tester.binding.setSurfaceSize(null));
-    final font = File('/System/Library/Fonts/Supplemental/Arial.ttf');
+    final font = File('assets/fonts/Inter.ttf');
     if (font.existsSync()) {
-      final loader = FontLoader('Roboto')
+      final loader = FontLoader('Inter')
         ..addFont(Future.value(ByteData.sublistView(font.readAsBytesSync())));
       await tester.runAsync(() => loader.load());
     }

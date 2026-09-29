@@ -89,7 +89,7 @@ def mode_summary(couple, today, start=None, end=None):
         totals[period.mode] += max(0, (right-left).days)
     active = next((p for p in periods if p.ended_on is None), None)
     return {'mode': active.mode if active else None, 'since': str(active.started_on) if active else None,
-            'days': totals, 'history': [{'mode': p.mode, 'start': str(p.started_on), 'end': str(p.ended_on) if p.ended_on else None} for p in periods]}
+            'days': totals, 'history': [{'id': p.pk, 'mode': p.mode, 'start': str(p.started_on), 'end': str(p.ended_on) if p.ended_on else None} for p in periods]}
 
 
 class LifeView(APIView):
@@ -116,6 +116,33 @@ class LifeView(APIView):
                 active.ended_on = today
                 active.save(update_fields=['ended_on'])
             ModePeriod.objects.create(couple=couple, mode=mode, started_on=today)
+        return self.get(request)
+
+
+    @transaction.atomic
+    def put(self, request):
+        couple = Couple.objects.select_for_update().get(pk=couple_for(request.user).pk)
+        today = day_for(couple)
+        class PeriodSerializer(serializers.Serializer):
+            mode = serializers.ChoiceField(choices=['apart', 'together'])
+            start = serializers.DateField()
+            end = serializers.DateField(allow_null=True)
+        data = request.data.get('history')
+        if not isinstance(data, list) or len(data) > 200:
+            raise serializers.ValidationError('Use a history of up to 200 periods.')
+        serializer = PeriodSerializer(data=data, many=True)
+        serializer.is_valid(raise_exception=True)
+        rows = sorted(serializer.validated_data, key=lambda row: row['start'])
+        previous_end = None
+        for index, row in enumerate(rows):
+            start, end = row['start'], row['end']
+            if start < date(1900, 1, 1) or start > today or (end and (end <= start or end > today)):
+                raise serializers.ValidationError('Use past dates; the end must be after the start. Leave the current period open.')
+            if index and (previous_end is None or start < previous_end):
+                raise serializers.ValidationError('Periods cannot overlap. Only the last period can be ongoing.')
+            previous_end = end
+        ModePeriod.objects.filter(couple=couple).delete()
+        ModePeriod.objects.bulk_create([ModePeriod(couple=couple, mode=row['mode'], started_on=row['start'], ended_on=row['end']) for row in rows])
         return self.get(request)
 
 

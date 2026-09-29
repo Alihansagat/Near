@@ -184,14 +184,15 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
   int tab = 0;
   Timer? refreshTimer;
+  bool foreground = true;
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     refreshTimer = Timer.periodic(const Duration(minutes: 1), (_) {
-      if (mounted) {
+      if (mounted && foreground) {
         final state = context.read<AppState>();
-        state.run(state.reload);
+        state.refreshQuietly();
       }
     });
   }
@@ -205,22 +206,23 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState lifecycle) {
-    if (lifecycle == AppLifecycleState.resumed && mounted) {
+    foreground = lifecycle == AppLifecycleState.resumed;
+    if (foreground && mounted) {
       final state = context.read<AppState>();
-      state.run(state.reload);
+      state.refreshQuietly();
     }
   }
 
   @override
   Widget build(BuildContext context) => Scaffold(
         body: SafeArea(
-            child: IndexedStack(index: tab, children: const [
+            child: const [
           HomeScreen(),
           DailyPhotoScreen(),
           DatesScreen(),
           CountdownsScreen(),
           QuestionsScreen()
-        ])),
+        ][tab]),
         bottomNavigationBar: NavigationBar(
           selectedIndex: tab,
           onDestinationSelected: (value) => setState(() => tab = value),
@@ -328,8 +330,8 @@ class HomeScreen extends StatelessWidget {
       Row(children: [
         const Text('near',
             style: TextStyle(
-                fontSize: 32,
-                letterSpacing: -2,
+                fontSize: 34,
+                letterSpacing: -1.8,
                 fontWeight: FontWeight.w800,
                 color: coral)),
         const Spacer(),
@@ -355,7 +357,7 @@ class HomeScreen extends StatelessWidget {
             child: Text('♥  ${home['days_together']} days of us',
                 style: const TextStyle(
                     color: coral, fontWeight: FontWeight.w600))),
-        gap(24),
+        gap(16),
         Row(children: [
           Expanded(
               child: PersonBadge(
@@ -412,9 +414,13 @@ class HomeScreen extends StatelessWidget {
                 : 'Share my location')),
         gap(6),
         Text(
-            home['days_apart'] == null
-                ? 'Set your distance story in Our space'
-                : "${home['days_apart']} days loving from afar",
+            state.life?['mode'] != null
+                ? state.life!['mode'] == 'together'
+                    ? "${state.life!['days']['together']} days side by side"
+                    : "${state.life!['days']['apart']} days loving from afar"
+                : home['days_apart'] == null
+                    ? 'Set your distance story in Our space'
+                    : "${home['days_apart']} days loving from afar",
             style: const TextStyle(fontSize: 12, color: coral)),
       ])),
       const LifeCard(),
@@ -507,7 +513,7 @@ class PersonBadge extends StatelessWidget {
           label: '$name, ${mood?.label ?? 'Mood not shared'}',
           button: onTap != null,
           child: Material(
-            color: beige,
+            color: Colors.transparent,
             borderRadius: BorderRadius.circular(24),
             clipBehavior: Clip.antiAlias,
             child: InkWell(

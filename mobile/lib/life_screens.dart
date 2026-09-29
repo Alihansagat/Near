@@ -49,24 +49,11 @@ class LifeCard extends StatelessWidget {
               ? 'Choose your mode to start counting.'
               : 'Current chapter since ${life!['since']}',
           style: Theme.of(context).textTheme.bodySmall),
-      TextButton(
-          onPressed: () => showModalBottomSheet<void>(
-              context: context,
-              builder: (_) => SafeArea(
-                      child: ListView(
-                          shrinkWrap: true,
-                          padding: const EdgeInsets.all(24),
-                          children: [
-                        const Text('Our chapters'),
-                        for (final row in (life?['history'] as List? ?? []))
-                          ListTile(
-                              title: Text(row['mode'] == 'together'
-                                  ? 'Together'
-                                  : 'Apart'),
-                              subtitle: Text(
-                                  '${row['start']} → ${row['end'] ?? 'Today'}')),
-                      ]))),
-          child: const Text('View history')),
+      TextButton.icon(
+          onPressed: () => Navigator.of(context).push<void>(
+              MaterialPageRoute(builder: (_) => const RhythmEditor())),
+          icon: const Icon(Icons.edit_calendar_outlined, size: 18),
+          label: const Text('Edit history')),
       for (final event in (life?['notifications'] as List? ?? []))
         ListTile(
             contentPadding: EdgeInsets.zero,
@@ -133,15 +120,28 @@ class _ImportantDatesScreenState extends State<ImportantDatesScreen> {
         const Text(
             'Birthdays, anniversaries, and little reasons to celebrate. Monthly relationship milestones appear automatically.'),
         gap(),
-        const Text('Reminders appear here while you use Near. Add them to your phone calendar for alerts when Near is closed.'),
-        TextButton.icon(icon: const Icon(Icons.calendar_month_outlined), label: const Text('Add reminders to calendar'), onPressed: () async {
-          final state = context.read<AppState>();
-          final ok = await state.run(() async {
-            final response = await state.api.dio.get<String>('important-dates/calendar/', options: Options(responseType: ResponseType.plain));
-            await FilePicker.platform.saveFile(dialogTitle: 'Save Near reminders', fileName: 'near-dates.ics', bytes: Uint8List.fromList(utf8.encode(response.data!)));
-          });
-          if (ok && context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Open near-dates.ics in your calendar and enable event alerts.')));
-        }),
+        const Text(
+            'Reminders appear here while you use Near. Add them to your phone calendar for alerts when Near is closed.'),
+        TextButton.icon(
+            icon: const Icon(Icons.calendar_month_outlined),
+            label: const Text('Add reminders to calendar'),
+            onPressed: () async {
+              final state = context.read<AppState>();
+              final ok = await state.run(() async {
+                final response = await state.api.dio.get<String>(
+                    'important-dates/calendar/',
+                    options: Options(responseType: ResponseType.plain));
+                await FilePicker.platform.saveFile(
+                    dialogTitle: 'Save Near reminders',
+                    fileName: 'near-dates.ics',
+                    bytes: Uint8List.fromList(utf8.encode(response.data!)));
+              });
+              if (ok && context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                    content: Text(
+                        'Open near-dates.ics in your calendar and enable event alerts.')));
+              }
+            }),
         gap(),
         FilledButton.icon(
             onPressed: edit,
@@ -481,4 +481,140 @@ class _WishReportState extends State<WishReport> {
                   },
             child: const Text('Save our memory')),
       ]))));
+}
+
+class RhythmEditor extends StatefulWidget {
+  const RhythmEditor({super.key});
+  @override
+  State<RhythmEditor> createState() => _RhythmEditorState();
+}
+
+class _RhythmEditorState extends State<RhythmEditor> {
+  late List<Map<String, dynamic>> rows;
+  bool saving = false;
+  String? error;
+  @override
+  void initState() {
+    super.initState();
+    rows = (context.read<AppState>().life?['history'] as List? ?? [])
+        .map((r) => Map<String, dynamic>.from(r as Map))
+        .toList();
+  }
+
+  Future<void> pick(int index, String field) async {
+    final today =
+        DateTime.parse(context.read<AppState>().home!['day'] as String);
+    final initial = DateTime.tryParse(rows[index][field] ?? '') ?? today;
+    final day = await showDatePicker(
+        context: context,
+        initialDate: initial.isAfter(today) ? today : initial,
+        firstDate: DateTime(1900),
+        lastDate: today);
+    if (day != null && mounted) {
+      setState(() => rows[index][field] = DateFormat('yyyy-MM-dd').format(day));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('Our rhythm')),
+        body: SafeArea(
+            child: ListView(padding: const EdgeInsets.all(20), children: [
+          Text('Every chapter counts.',
+              style: Theme.of(context).textTheme.headlineSmall),
+          gap(8),
+          const Text(
+              'Add the time you already spent apart or together. An end date is the first day of the next chapter. Gaps stay uncounted.'),
+          gap(20),
+          for (var i = 0; i < rows.length; i++)
+            CozyCard(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                  Row(children: [
+                    Expanded(
+                        child: DropdownButtonFormField<String>(
+                            initialValue: rows[i]['mode'] as String,
+                            key: ValueKey('mode-$i-${rows[i]['mode']}'),
+                            items: const [
+                              DropdownMenuItem(
+                                  value: 'apart', child: Text('Apart')),
+                              DropdownMenuItem(
+                                  value: 'together', child: Text('Together'))
+                            ],
+                            onChanged: saving
+                                ? null
+                                : (v) => setState(() => rows[i]['mode'] = v))),
+                    IconButton(
+                        tooltip: 'Remove period',
+                        onPressed: saving
+                            ? null
+                            : () => setState(() => rows.removeAt(i)),
+                        icon: const Icon(Icons.delete_outline))
+                  ]),
+                  ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Started'),
+                      subtitle: Text(rows[i]['start']),
+                      trailing: const Icon(Icons.calendar_today_outlined),
+                      onTap: saving ? null : () => pick(i, 'start')),
+                  SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Still ongoing'),
+                      value: rows[i]['end'] == null,
+                      onChanged: saving
+                          ? null
+                          : (v) => setState(() => rows[i]['end'] = v
+                              ? null
+                              : context.read<AppState>().home!['day'])),
+                  if (rows[i]['end'] != null)
+                    ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: const Text('Ended'),
+                        subtitle: Text(rows[i]['end']),
+                        trailing: const Icon(Icons.calendar_today_outlined),
+                        onTap: saving ? null : () => pick(i, 'end')),
+                ])),
+          OutlinedButton.icon(
+              onPressed: saving
+                  ? null
+                  : () => setState(() => rows.add({
+                        'mode': 'apart',
+                        'start': context.read<AppState>().home!['day'],
+                        'end': null
+                      })),
+              icon: const Icon(Icons.add),
+              label: const Text('Add a period')),
+          gap(12),
+          if (error != null)
+            Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Text(error!, style: const TextStyle(color: coral))),
+          FilledButton(
+              onPressed: saving
+                  ? null
+                  : () async {
+                      setState(() {
+                        saving = true;
+                        error = null;
+                      });
+                      final state = context.read<AppState>();
+                      final ok = await state.run(() async {
+                        await state.api.dio
+                            .put<dynamic>('life/', data: {'history': rows});
+                        await state.reload();
+                      });
+                      if (!context.mounted) return;
+                      if (ok) {
+                        Navigator.pop(context);
+                      } else {
+                        setState(() {
+                          saving = false;
+                          error = state.error;
+                        });
+                      }
+                    },
+              child: Text(saving ? 'Saving…' : 'Save our history')),
+        ])),
+      );
 }

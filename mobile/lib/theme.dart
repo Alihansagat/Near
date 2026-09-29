@@ -1,82 +1,123 @@
 import 'package:flutter/material.dart';
-import 'animations.dart';
+import 'package:flutter/foundation.dart';
 
-const coral = Color(0xFFA94762);
-const rose = Color(0xFFF2DFE2);
-const beige = Color(0xFFF6F3F0);
-const slate = Color(0xFF39343C);
+const coral = Color(0xFF965468);
+const rose = Color(0xFFF0E4E7);
+const beige = Color(0xFFF7F6F3);
+const slate = Color(0xFF292D35);
 
-ThemeData nearTheme() => ThemeData(
-      useMaterial3: true,
-      fontFamilyFallback: const ['Apple Color Emoji', 'sans-serif'],
-      pageTransitionsTheme: const PageTransitionsTheme(builders: {
-        TargetPlatform.android: FadeForwardsPageTransitionsBuilder(),
-        TargetPlatform.iOS: FadeForwardsPageTransitionsBuilder(),
-      }),
-      scaffoldBackgroundColor: beige,
-      colorScheme: ColorScheme.fromSeed(
-          seedColor: coral, primary: coral, surface: beige),
-      textTheme: const TextTheme(
-        headlineLarge: TextStyle(
-            fontSize: 30,
-            fontWeight: FontWeight.w600,
-            color: slate,
-            letterSpacing: -1),
-        headlineSmall:
-            TextStyle(fontSize: 24, fontWeight: FontWeight.w600, color: slate),
-        titleLarge:
-            TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: slate),
-        bodyLarge: TextStyle(fontSize: 16, color: slate, height: 1.5),
-        bodyMedium: TextStyle(fontSize: 14, color: slate, height: 1.5),
-      ),
-      appBarTheme: const AppBarTheme(
-          backgroundColor: beige, foregroundColor: slate, elevation: 0),
-      navigationBarTheme: NavigationBarThemeData(
-          backgroundColor: Colors.white,
-          indicatorColor: rose,
-          labelTextStyle: WidgetStateProperty.all(
-              const TextStyle(fontSize: 11, fontWeight: FontWeight.w600))),
-      cardTheme: CardThemeData(
+ThemeData nearTheme() {
+  final apple = !kIsWeb &&
+      (defaultTargetPlatform == TargetPlatform.iOS ||
+          defaultTargetPlatform == TargetPlatform.macOS);
+  final font = apple ? 'CupertinoSystemText' : 'Inter';
+  final display = apple ? 'CupertinoSystemDisplay' : 'Inter';
+  return ThemeData(
+    useMaterial3: true,
+    fontFamily: font,
+    fontFamilyFallback: const ['Apple Color Emoji'],
+    scaffoldBackgroundColor: beige,
+    colorScheme: ColorScheme.fromSeed(
+        seedColor: coral, primary: coral, surface: beige, onSurface: slate),
+    textTheme: TextTheme(
+      headlineLarge: TextStyle(
+          fontFamily: display,
+          fontSize: 32,
+          fontWeight: FontWeight.w700,
+          color: slate,
+          letterSpacing: -1.2,
+          height: 1.15),
+      headlineSmall: TextStyle(
+          fontFamily: display,
+          fontSize: 25,
+          fontWeight: FontWeight.w600,
+          color: slate,
+          letterSpacing: -.7,
+          height: 1.25),
+      titleLarge: TextStyle(
+          fontFamily: display,
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
+          color: slate,
+          letterSpacing: -.4),
+      bodyLarge: TextStyle(
+          fontFamily: font,
+          fontSize: 16,
+          color: slate,
+          height: 1.45,
+          letterSpacing: -.2),
+      bodyMedium:
+          TextStyle(fontFamily: font, fontSize: 14, color: slate, height: 1.45),
+      bodySmall: TextStyle(
+          fontFamily: font,
+          fontSize: 12,
+          color: const Color(0xFF777880),
+          height: 1.4),
+    ),
+    appBarTheme: const AppBarTheme(
+        backgroundColor: beige,
+        foregroundColor: slate,
         elevation: 0,
-        color: const Color(0xFFFCFAF8),
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-            side: const BorderSide(color: Color(0xFFEAE3DF))),
-      ),
-      chipTheme: ChipThemeData(
-          side: BorderSide.none,
-          backgroundColor: beige,
-          selectedColor: rose,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
-      inputDecorationTheme: InputDecorationTheme(
+        scrolledUnderElevation: 0,
+        centerTitle: true),
+    navigationBarTheme: NavigationBarThemeData(
+        height: 68,
+        backgroundColor: Colors.white,
+        indicatorColor: rose,
+        surfaceTintColor: Colors.transparent,
+        labelTextStyle: WidgetStateProperty.all(TextStyle(
+            fontFamily: font, fontSize: 10, fontWeight: FontWeight.w500))),
+    cardTheme: CardThemeData(
+        elevation: 0,
+        color: Colors.white,
+        margin: const EdgeInsets.only(bottom: 10),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22))),
+    dividerTheme: const DividerThemeData(
+        color: Color(0xFFEAE7E5), space: 24, thickness: 1),
+    chipTheme: ChipThemeData(
+        side: BorderSide.none,
+        backgroundColor: const Color(0xFFEFEDEB),
+        selectedColor: rose,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
+    inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: Colors.white,
+        fillColor: const Color(0xFFF0EFED),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
         border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(18),
-            borderSide: BorderSide.none),
-      ),
-      filledButtonTheme: FilledButtonThemeData(
-          style: FilledButton.styleFrom(
-        minimumSize: const Size(48, 52),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      )),
-    );
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide.none)),
+    filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+            minimumSize: const Size(48, 50),
+            textStyle: TextStyle(
+                fontFamily: font, fontWeight: FontWeight.w600, fontSize: 14),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16)))),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+            side: const BorderSide(color: Color(0xFFDED8D7)),
+            minimumSize: const Size(44, 46),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16)))),
+    bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: beige, showDragHandle: true),
+  );
+}
 
 class CozyCard extends StatelessWidget {
   final Widget child;
   final Color color;
   const CozyCard({super.key, required this.child, this.color = Colors.white});
   @override
-  Widget build(BuildContext context) => GentleEntrance(
-          child: Container(
+  Widget build(BuildContext context) => Container(
         width: double.infinity,
-        margin: const EdgeInsets.only(bottom: 18),
-        padding: const EdgeInsets.all(18),
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
             color: color,
             borderRadius: BorderRadius.circular(26),
-            border: Border.all(color: rose.withValues(alpha: .5))),
+            border: Border.all(color: const Color(0xFFEDEAE7), width: .7)),
         child: Material(type: MaterialType.transparency, child: child),
-      ));
+      );
 }

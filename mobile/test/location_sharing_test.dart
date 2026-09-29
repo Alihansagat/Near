@@ -39,6 +39,7 @@ class LocationApi extends Api {
 
   @override
   Future<Map<String, dynamic>> get(String path) async {
+    if (path == 'life/') return {'history': [], 'days': {'apart': 0, 'together': 0}};
     if (path == 'me/') return me;
     if (path == 'home/') return home;
     if (path == 'dates/' || path == 'meetings/' || path == 'moments/') {

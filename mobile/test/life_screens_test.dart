@@ -31,6 +31,7 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final state = AppState(LifeApi())
       ..me = {'id': 1}
+      ..home = {'day': '2026-09-29'}
       ..life = {
         'mode': 'together',
         'since': '2026-09-01',
@@ -46,6 +47,7 @@ void main() {
       const DateEditor(),
       const WishReport(row: {'id': 1, 'title': 'See the ocean'}),
       const LifeCard(),
+      const RhythmEditor(),
       const HugDialog()
     ]) {
       await tester.pumpWidget(fixtures.app(state, screen));

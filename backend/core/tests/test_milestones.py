@@ -104,3 +104,27 @@ class MilestoneTests(APITestCase):
         self.assertIn('TRIGGER:-P3D', content)
         self.assertIn('Birthday\\, love\\nBEGIN:VEVENT', content)
         self.assertIn('months together', content)
+
+    def test_backdated_history_updates_totals_and_rejects_overlap_atomically(self):
+        self.as_user(self.a)
+        today = self.day
+        history = [
+            {'mode': 'apart', 'start': str(today - timedelta(days=100)), 'end': str(today - timedelta(days=10))},
+            {'mode': 'together', 'start': str(today - timedelta(days=10)), 'end': None},
+        ]
+        response = self.client.put('/api/life/', {'history': history}, format='json')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['days'], {'apart': 90, 'together': 10})
+        self.as_user(self.b)
+        self.assertEqual(self.client.get('/api/life/').data['days']['apart'], 90)
+        history[1]['start'] = str(today - timedelta(days=50))
+        self.assertEqual(self.client.put('/api/life/', {'history': history}, format='json').status_code, 400)
+        self.assertEqual(self.client.get('/api/life/').data['days']['apart'], 90)
+        history[1]['start'] = str(today + timedelta(days=1))
+        self.assertEqual(self.client.put('/api/life/', {'history': history}, format='json').status_code, 400)
+        self.as_user(self.other)
+        self.client.post('/api/couple/', {}, format='json')
+        self.as_user(self.other)
+        self.client.put('/api/life/', {'history': []}, format='json')
+        self.as_user(self.a)
+        self.assertEqual(self.client.get('/api/life/').data['days']['apart'], 90)

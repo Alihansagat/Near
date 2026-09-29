@@ -6,6 +6,7 @@ class AppState extends ChangeNotifier {
   final Api api;
   AppState(this.api) {
     api.onSessionExpired = () {
+      _sessionVersion++;
       me = null;
       home = null;
       life = null;
@@ -55,28 +56,72 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  Future<void> reload() async {
-    me = await api.get('me/');
-    if (paired) {
-      home = await api.get('home/');
-      life = await api.get('life/');
-      countdowns = [];
-      String? countdownPath = 'meetings/';
-      while (countdownPath != null) {
-        final page = await api.get(countdownPath);
-        countdowns.addAll(page['results'] as List);
-        final next = page['next'] as String?;
-        countdownPath =
-            next == null ? null : 'meetings/?${Uri.parse(next).query}';
-      }
-      final datePage = await api.get('dates/');
-      dates = datePage['results'] as List;
-      nextDates = datePage['next'] as String?;
-      final archive = await api.get('moments/');
-      moments = archive['results'] as List;
-      momentCount = archive['count'] as int;
-      nextMoments = archive['next'] as int?;
+  int _sessionVersion = 0;
+  Future<void>? _reloading;
+  Future<void> reload() =>
+      _reloading ??= _load().whenComplete(() => _reloading = null);
+
+  bool _quietRefreshing = false;
+  Future<void> refreshQuietly() async {
+    if (busy || _reloading != null || _quietRefreshing || !paired) return;
+    _quietRefreshing = true;
+    try {
+      final userId = me?['id'];
+      final result = await Future.wait([api.get('home/'), api.get('life/')]);
+      if (me?['id'] != userId || busy || _reloading != null) return;
+      home = result[0];
+      life = result[1];
+      notifyListeners();
+    } catch (_) {
+      // Keep the current screen usable during an interrupted connection.
+    } finally {
+      _quietRefreshing = false;
     }
+  }
+
+  Future<void> _load() async {
+    final session = _sessionVersion;
+    final profile = await api.get('me/');
+    if (session != _sessionVersion) return;
+    if (profile['couple'] == null) {
+      me = profile;
+      home = null;
+      life = null;
+      notifyListeners();
+      return;
+    }
+    Future<List<dynamic>> loadCountdowns() async {
+      final rows = <dynamic>[];
+      String? path = 'meetings/';
+      while (path != null) {
+        final page = await api.get(path);
+        rows.addAll(page['results'] as List);
+        path = page['next'] == null
+            ? null
+            : 'meetings/?${Uri.parse(page['next']).query}';
+      }
+      return rows;
+    }
+
+    final results = await Future.wait<Object>([
+      api.get('home/'),
+      api.get('life/'),
+      loadCountdowns(),
+      api.get('dates/'),
+      api.get('moments/'),
+    ]);
+    if (session != _sessionVersion) return;
+    me = profile;
+    home = results[0] as Map<String, dynamic>;
+    life = results[1] as Map<String, dynamic>;
+    countdowns = results[2] as List<dynamic>;
+    final datePage = results[3] as Map<String, dynamic>;
+    dates = datePage['results'] as List;
+    nextDates = datePage['next'] as String?;
+    final archive = results[4] as Map<String, dynamic>;
+    moments = archive['results'] as List;
+    momentCount = archive['count'] as int;
+    nextMoments = archive['next'] as int?;
     notifyListeners();
   }
 
@@ -136,6 +181,7 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> signOut() async {
+    _sessionVersion++;
     try {
       await api.logout();
     } finally {
