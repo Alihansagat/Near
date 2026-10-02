@@ -49,13 +49,21 @@ class _AuthScreenState extends State<AuthScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Icon(Icons.favorite_rounded, size: 64, color: coral),
-                  gap(24),
-                  Text('NEAR',
+                  const Center(
+                      child: Text('near·',
+                          style: TextStyle(
+                              fontFamily: 'Newsreader',
+                              fontStyle: FontStyle.italic,
+                              fontSize: 54,
+                              fontWeight: FontWeight.w700,
+                              color: coral))),
+                  const Text('A little closer, every day.',
                       textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.headlineLarge),
-                  const Text('Closer, even from afar.',
-                      textAlign: TextAlign.center),
+                      style: TextStyle(
+                          fontFamily: 'Newsreader',
+                          fontStyle: FontStyle.italic,
+                          fontSize: 20,
+                          color: mutedInk)),
                   gap(36),
                   if (registering) ...[
                     TextFormField(
@@ -217,12 +225,18 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        body: SafeArea(child: PageView.builder(
+        body: SafeArea(
+            child: PageView.builder(
           controller: pages,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: 5,
-          itemBuilder: (_, index) => _KeptTab(child: const [
-            HomeScreen(), DailyPhotoScreen(), DatesScreen(), CountdownsScreen(), QuestionsScreen(),
+          itemBuilder: (_, index) => _KeptTab(
+              child: const [
+            HomeScreen(),
+            DailyPhotoScreen(),
+            DatesScreen(),
+            CountdownsScreen(),
+            QuestionsScreen(),
           ][index]),
         )),
         bottomNavigationBar: NavigationBar(
@@ -237,14 +251,14 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
                 selectedIcon: Icon(Icons.home_rounded),
                 label: 'Home'),
             NavigationDestination(
-                icon: Icon(Icons.camera_alt_outlined), label: 'Daily Photo'),
+                icon: Icon(Icons.camera_alt_outlined), label: 'Daily'),
             NavigationDestination(
-                icon: Icon(Icons.favorite_border), label: 'Dates'),
+                icon: Icon(Icons.calendar_today_outlined), label: 'Dates'),
             NavigationDestination(
-                icon: Icon(Icons.hourglass_empty_rounded), label: 'Countdown'),
+                icon: Icon(Icons.hourglass_empty_rounded), label: 'Closer'),
             NavigationDestination(
                 icon: Icon(Icons.chat_bubble_outline_rounded),
-                label: 'Questions'),
+                label: 'Prompts'),
           ],
         ),
       );
@@ -256,38 +270,51 @@ class _KeptTab extends StatefulWidget {
   @override
   State<_KeptTab> createState() => _KeptTabState();
 }
+
 class _KeptTabState extends State<_KeptTab> with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
   @override
-  Widget build(BuildContext context) { super.build(context); return widget.child; }
+  Widget build(BuildContext context) {
+    super.build(context);
+    return widget.child;
+  }
 }
 
 class PageBody extends StatelessWidget {
   final List<Widget> children;
-  const PageBody({super.key, required this.children});
+  final Color? background;
+  const PageBody({super.key, required this.children, this.background});
   @override
   Widget build(BuildContext context) {
     final state = context.read<AppState>();
-    return RefreshIndicator(
-        onRefresh: () async {
-          await state.run(state.reload);
-        },
-        child: Center(
-            child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 680),
-                child: ListView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.all(16),
-                  children: children,
-                ))));
+    return ColoredBox(
+      color: background ?? Colors.transparent,
+      child: RefreshIndicator(
+          onRefresh: () async {
+            await state.run(state.reload);
+          },
+          child: Center(
+              child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 680),
+                  child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(16),
+                    children: children,
+                  )))),
+    );
   }
 }
 
 void openPage(BuildContext context, Widget page) =>
     Navigator.of(context).push(MaterialPageRoute<void>(
-        builder: (_) =>
-            Scaffold(appBar: AppBar(), body: SafeArea(child: page))));
+        builder: (_) => Scaffold(
+            appBar: AppBar(),
+            body: SafeArea(
+                child: Center(
+                    child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 680),
+                        child: page))))));
 
 class SectionHeading extends StatelessWidget {
   final String eyebrow, title, subtitle;
@@ -313,6 +340,47 @@ class SectionHeading extends StatelessWidget {
       ]);
 }
 
+class NearTopBar extends StatelessWidget {
+  const NearTopBar({super.key});
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(bottom: 24),
+        child: Row(children: [
+          const Text('near',
+              style: TextStyle(
+                  fontFamily: 'Newsreader',
+                  fontStyle: FontStyle.italic,
+                  fontSize: 38,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -2.5,
+                  color: coral)),
+          const Text('·', style: TextStyle(fontSize: 28, color: coral)),
+          const Spacer(),
+          IconButton(
+              tooltip: 'Memories',
+              onPressed: () => openPage(context, const MomentsScreen()),
+              icon: const Icon(Icons.auto_stories_outlined)),
+          IconButton(
+              tooltip: 'Our space',
+              onPressed: () => openPage(context, const UsScreen()),
+              icon: const Icon(Icons.settings_outlined)),
+        ]),
+      );
+}
+
+class NearEyebrow extends StatelessWidget {
+  final String text;
+  const NearEyebrow(this.text, {super.key});
+  @override
+  Widget build(BuildContext context) => Text(text.toUpperCase(),
+      style: const TextStyle(
+          color: coral,
+          fontSize: 11,
+          letterSpacing: 2,
+          fontWeight: FontWeight.w700));
+}
+
 String partnerName(AppState state) {
   final couple = state.home?['couple'];
   if (couple == null) return 'Your person';
@@ -335,48 +403,39 @@ class HomeScreen extends StatelessWidget {
     final partner = couple['user_1']['id'] == state.me?['id']
         ? couple['user_2'] as Map?
         : couple['user_1'] as Map?;
-    final upcoming = home['next_date'] ??
-        state.dates
-            .where((d) =>
-                d['status'] != 'declined' &&
-                DateTime.parse(d['scheduled_at']).isAfter(DateTime.now()))
-            .firstOrNull;
     final liveDistance = sharedDistanceKm(state.me, partner);
-    final hasSharedLocation = state.me?['latitude'] != null;
-    final partnerHasSharedLocation = partner?['latitude'] != null;
+    final savedDistance = couple['distance_km'];
+    final distance = liveDistance ?? savedDistance;
+    final meeting = home['meeting'] as Map?;
+    final nextDate = home['next_date'] as Map?;
     return PageBody(children: [
-      Row(children: [
-        const Text('near',
-            style: TextStyle(
-                fontSize: 34,
-                letterSpacing: -1.8,
-                fontWeight: FontWeight.w800,
-                color: coral)),
-        const Spacer(),
-        IconButton(
-            tooltip: 'Memories',
-            onPressed: () => openPage(context, const MomentsScreen()),
-            icon: const Icon(Icons.auto_awesome_outlined)),
-        IconButton(
-            tooltip: 'Our space',
-            onPressed: () => openPage(context, const UsScreen()),
-            icon: const Icon(Icons.tune_rounded))
-      ]),
+      const NearTopBar(),
+      const Text('A little closer, every day.',
+          style: TextStyle(
+              fontFamily: 'Newsreader',
+              fontStyle: FontStyle.italic,
+              fontSize: 23,
+              color: mutedInk)),
       gap(18),
-      Text('A little closer, every day.',
-          style: Theme.of(context).textTheme.headlineSmall),
-      gap(20),
       CozyCard(
           child: Column(children: [
         Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-                color: rose, borderRadius: BorderRadius.circular(30)),
-            child: Text('♥  ${home['days_together']} days of us',
-                style: const TextStyle(
-                    color: coral, fontWeight: FontWeight.w600))),
-        gap(16),
-        Row(children: [
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+          decoration: BoxDecoration(
+              color: rose, borderRadius: BorderRadius.circular(40)),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              const Icon(Icons.favorite, color: coral, size: 16),
+              const SizedBox(width: 7),
+              Text('${home['days_together']} days of us',
+                  style: const TextStyle(
+                      color: coral, fontWeight: FontWeight.w700, fontSize: 14)),
+            ]),
+          ),
+        ),
+        gap(24),
+        Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Expanded(
               child: PersonBadge(
                   name: state.me?['full_name'] ?? 'You',
@@ -385,130 +444,175 @@ class HomeScreen extends StatelessWidget {
                   mood: HeartMood.parse(state.me?['mood']),
                   onTap: () => showMoodPicker(context, state, couple))),
           const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
-              child: Icon(Icons.favorite, color: coral, size: 26)),
+              padding: EdgeInsets.only(top: 52),
+              child: Icon(Icons.favorite, color: coral, size: 22)),
           Expanded(
               child: PersonBadge(
                   name: partnerName(state),
                   label: 'PARTNER',
                   character: mascotFor(partner, couple),
-                  mood: HeartMood.parse(partner?['mood'])))
+                  mood: HeartMood.parse(partner?['mood']))),
         ]),
-        gap(24),
-        Text(
-            liveDistance != null
-                ? '${NumberFormat.decimalPattern().format(liveDistance)} km apart'
-                : couple['distance_km'] == null
-                    ? 'Connected at heart'
-                    : '${NumberFormat.decimalPattern().format(couple['distance_km'])} km apart',
-            style: const TextStyle(fontWeight: FontWeight.w600)),
-        gap(6),
-        if (liveDistance == null)
-          Text(
-              hasSharedLocation
-                  ? partnerHasSharedLocation
-                      ? 'Update location to calculate your distance'
-                      : 'Waiting for ${partnerName(state)} to share location'
-                  : 'Share location to calculate your distance',
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 12, color: coral)),
+        gap(12),
+        const Divider(),
+        Wrap(
+            spacing: 10,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Row(mainAxisSize: MainAxisSize.min, children: [
+                const Icon(Icons.location_on_outlined, color: coral, size: 19),
+                const SizedBox(width: 5),
+                Text(
+                    distance == null
+                        ? 'Connected at heart'
+                        : '${NumberFormat.decimalPattern().format(distance)} km apart',
+                    style: const TextStyle(color: mutedInk, fontSize: 14)),
+              ]),
+              if (partner != null)
+                FilledButton.icon(
+                  onPressed: state.busy
+                      ? null
+                      : () async {
+                          final ok = await state
+                              .run(() => state.api.post('messages/hug/'));
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                content: Text(ok
+                                    ? 'Hug sent 🫂'
+                                    : state.error ?? 'Could not send hug.')));
+                          }
+                        },
+                  icon: const Icon(Icons.favorite_outline, size: 17),
+                  label: const Text('Send a hug'),
+                ),
+            ]),
+        gap(4),
+        Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: state.busy
+                  ? null
+                  : () async {
+                      final ok = await state.run(state.shareCurrentLocation);
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                            content: Text(ok
+                                ? 'Location shared with your partner'
+                                : state.error ?? 'Could not share location.')));
+                      }
+                    },
+              icon: const Icon(Icons.my_location, size: 16),
+              label: Text(state.me?['latitude'] == null
+                  ? 'Share my location'
+                  : 'Update my location'),
+            )),
         if (liveDistance != null)
-          const Text('Calculated from your shared locations',
-              style: TextStyle(fontSize: 12, color: coral)),
-        TextButton.icon(
-            onPressed: state.busy
-                ? null
-                : () async {
-                    final ok = await state.run(state.shareCurrentLocation);
-                    if (!context.mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text(ok
-                            ? 'Location shared with your partner'
-                            : state.error ?? 'Could not share location.')));
-                  },
-            icon: const Icon(Icons.location_on_outlined, size: 18),
-            label: Text(hasSharedLocation
-                ? 'Update my location'
-                : 'Share my location')),
-        gap(6),
-        Text(
-            state.life?['mode'] != null
-                ? state.life!['mode'] == 'together'
-                    ? "${state.life!['days']['together']} days side by side"
-                    : "${state.life!['days']['apart']} days loving from afar"
-                : home['days_apart'] == null
-                    ? 'Set your distance story in Our space'
-                    : "${home['days_apart']} days loving from afar",
-            style: const TextStyle(fontSize: 12, color: coral)),
+          const Align(
+              alignment: Alignment.centerLeft,
+              child: Text('Calculated from your shared locations',
+                  style: TextStyle(color: mutedInk, fontSize: 11))),
       ])),
-      const LifeCard(),
       Container(
-          margin: const EdgeInsets.only(bottom: 18),
-          padding: const EdgeInsets.all(26),
-          decoration: BoxDecoration(
-              color: const Color(0xFFECE3E4),
-              borderRadius: BorderRadius.circular(28)),
-          child: Column(children: [
-            const Text('THE NEXT HUG',
-                style: TextStyle(color: slate, letterSpacing: 3, fontSize: 11)),
-            gap(12),
-            Text(home['days_until_meeting']?.toString().padLeft(2, '0') ?? '—',
-                style: const TextStyle(
-                    fontSize: 58,
-                    height: 1.1,
-                    fontWeight: FontWeight.w300,
-                    color: slate)),
+        margin: const EdgeInsets.only(bottom: 20),
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(26),
+          border: Border.all(color: rose),
+          gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFFFFFCFD), Color(0xFFF4E9F0)]),
+        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const NearEyebrow('The next hug'),
+          gap(10),
+          if (meeting != null) ...[
+            SizedBox(
+                width: double.infinity,
+                child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text('${home['days_until_meeting'] ?? '—'}',
+                              style: const TextStyle(
+                                  fontFamily: 'Newsreader',
+                                  fontSize: 76,
+                                  height: 1,
+                                  letterSpacing: -4,
+                                  color: slate)),
+                          const Padding(
+                              padding: EdgeInsets.only(left: 9, bottom: 10),
+                              child: Text('days',
+                                  style: TextStyle(
+                                      fontFamily: 'Newsreader',
+                                      fontStyle: FontStyle.italic,
+                                      fontSize: 24,
+                                      color: coral))),
+                        ]))),
+            const Text('until we hold each other',
+                style: TextStyle(fontSize: 16, color: mutedInk)),
+            gap(18),
+            const Divider(),
+            Text(meeting['title'] ?? 'Our next meeting',
+                style: Theme.of(context).textTheme.titleLarge),
+            gap(4),
             Text(
-                home['meeting'] == null
-                    ? 'Something to look forward to'
-                    : 'DAYS UNTIL WE MEET',
-                style: const TextStyle(
-                    color: slate, letterSpacing: 1.5, fontSize: 12)),
-            gap(12),
-            if (home['meeting'] != null)
-              Text(
-                  "${home['meeting']['title']} · ${DateFormat('MMM d').format(DateTime.parse(home['meeting']['target_date']))}",
-                  style: const TextStyle(color: slate)),
-            if (home['meeting'] != null)
-              CountdownActions(event: home['meeting'] as Map),
-            if (home['meeting'] == null)
-              TextButton(
-                  onPressed: () => addCountdown(context),
-                  child: const Text('Add our next meeting →',
-                      style: TextStyle(color: slate))),
-          ])),
-      const RelationshipHub(),
+                DateFormat('MMMM d, yyyy')
+                    .format(DateTime.parse(meeting['target_date'])),
+                style: const TextStyle(color: mutedInk)),
+            CountdownActions(event: meeting),
+          ] else ...[
+            Text('Something to look forward to',
+                style: Theme.of(context).textTheme.headlineSmall),
+            gap(8),
+            const Text('Make a little room for your next reunion.'),
+            TextButton(
+                onPressed: () => addCountdown(context),
+                child: const Text('Add our next meeting →')),
+          ],
+        ]),
+      ),
+      Row(children: [
+        Expanded(
+            child: Text('A Little Moment for Today',
+                style: Theme.of(context).textTheme.headlineSmall)),
+        Text(DateFormat('MMM d').format(DateTime.parse(home['day'])),
+            style: const TextStyle(color: mutedInk, fontSize: 13)),
+      ]),
+      gap(16),
       PhotoCard(
           data: home['recent_photo_day'] as Map? ?? home,
           today: home['recent_photo_day'] == null ||
               home['recent_photo_day']['day'] == home['day']),
       QuestionCard(key: ValueKey(home['day']), data: home, today: true),
-      if (upcoming != null)
+      if (nextDate != null)
         CozyCard(
             child:
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('OUR NEXT DATE',
-              style: TextStyle(color: coral, letterSpacing: 2, fontSize: 11)),
-          gap(10),
-          Text(activities[upcoming['type']] ?? 'Our date',
+          const NearEyebrow('Our next date'),
+          gap(8),
+          Text(activities[nextDate['type']] ?? 'Our date',
               style: Theme.of(context).textTheme.titleLarge),
-          gap(6),
-          Text(dateLabel(upcoming['scheduled_at'])),
+          gap(4),
+          Text(dateLabel(nextDate['scheduled_at'])),
+          gap(8),
           Text(
-              upcoming['status'] == 'accepted'
+              nextDate['status'] == 'accepted'
                   ? 'It’s a date ♥'
                   : 'Invitation waiting for a reply',
-              style: const TextStyle(color: coral, fontSize: 12))
+              style: const TextStyle(color: coral)),
         ])),
+      const LifeCard(),
+      const RelationshipHub(),
       FilledButton.icon(
           onPressed: state.busy ? null : () => planDate(context),
           icon: const Icon(Icons.add),
           label: const Text('Plan a date')),
-      gap(22),
-      const Text('Different places. Our little world.',
-          textAlign: TextAlign.center,
-          style: TextStyle(color: coral, fontStyle: FontStyle.italic)),
-      gap(),
+      gap(24),
     ]);
   }
 }
@@ -531,36 +635,48 @@ class PersonBadge extends StatelessWidget {
           label: '$name, ${mood?.label ?? 'Mood not shared'}',
           button: onTap != null,
           child: Material(
-            color: Colors.transparent,
-            borderRadius: BorderRadius.circular(24),
+            color: const Color(0xFFF9F1F4),
+            borderRadius: BorderRadius.circular(22),
             clipBehavior: Clip.antiAlias,
             child: InkWell(
-                onTap: onTap,
-                child: Padding(
-                    padding: const EdgeInsets.all(4),
-                    child: HeartMascot(
-                        character: character, mood: mood ?? HeartMood.joyful))),
+              onTap: onTap,
+              child: SizedBox.square(
+                  dimension: 78,
+                  child: Center(
+                      child: HeartMascot(
+                          character: character,
+                          mood: mood ?? HeartMood.joyful,
+                          size: 68))),
+            ),
           ),
         ),
-        gap(10),
-        Text(label,
-            style:
-                const TextStyle(fontSize: 9, letterSpacing: 2, color: coral)),
-        gap(4),
+        gap(12),
         Text(name,
             textAlign: TextAlign.center,
-            style: const TextStyle(fontWeight: FontWeight.w600)),
-        if (onTap != null)
-          TextButton(
-              onPressed: onTap,
-              child:
-                  Text(mood?.label ?? 'Set mood', textAlign: TextAlign.center))
-        else
-          Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              child: Text(mood?.label ?? 'Not shared yet',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: coral, fontSize: 12))),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+        gap(3),
+        Text(label,
+            style: const TextStyle(
+                color: mutedInk, fontSize: 10, letterSpacing: 1.5)),
+        gap(10),
+        InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(30),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+            decoration: BoxDecoration(
+                color: beige,
+                borderRadius: BorderRadius.circular(30),
+                border: Border.all(color: hairline)),
+            child: Text(
+                mood?.label ?? (onTap == null ? 'Not shared yet' : 'Set mood'),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: coral, fontSize: 12)),
+          ),
+        ),
       ]);
 }
 
@@ -688,27 +804,82 @@ class DailyPhotoScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
-    return PageBody(children: [
-      const SectionHeading(
-          eyebrow: 'A daily ritual',
-          title: 'Your day. My day.',
-          subtitle: 'Two little moments. One shared story.'),
+    final photos = state.home?['photos'] as List? ?? [];
+    final shared = photos.length == 2;
+    return PageBody(background: const Color(0xFFFFF7FD), children: [
+      const NearTopBar(),
+      Center(
+          child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+        decoration:
+            BoxDecoration(color: rose, borderRadius: BorderRadius.circular(30)),
+        child: const Row(mainAxisSize: MainAxisSize.min, children: [
+          Icon(Icons.favorite_border, color: coral, size: 14),
+          SizedBox(width: 6),
+          NearEyebrow('A daily ritual'),
+        ]),
+      )),
+      gap(12),
+      const Text('Two little moments.\nOne shared story.',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+              fontFamily: 'Newsreader',
+              fontStyle: FontStyle.italic,
+              fontSize: 30,
+              color: coral,
+              height: 1.12)),
+      gap(26),
+      Container(
+        padding: const EdgeInsets.all(16),
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+            color: lavender, borderRadius: BorderRadius.circular(20)),
+        child: Row(children: [
+          Icon(shared ? Icons.check_circle_outline : Icons.lock_outline,
+              color: coral),
+          const SizedBox(width: 12),
+          Expanded(
+              child: Text(
+                  shared
+                      ? 'Unlocked · Both shared'
+                      : photos.isEmpty
+                          ? 'Your pair is waiting for today’s photos'
+                          : 'One photo shared · Waiting for the other',
+                  style: const TextStyle(fontWeight: FontWeight.w600))),
+        ]),
+      ),
       if (state.home != null) PhotoCard(data: state.home!, today: true),
+      gap(12),
+      if (MediaQuery.sizeOf(context).width < 360)
+        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('Memory Capsules',
+              style: Theme.of(context).textTheme.headlineSmall),
+          TextButton(
+              onPressed: () => openPage(context, const MomentsScreen()),
+              child: const Text('Open Archive →')),
+        ])
+      else
+        Row(children: [
+          Expanded(
+              child: Text('Memory Capsules',
+                  style: Theme.of(context).textTheme.headlineSmall)),
+          TextButton(
+              onPressed: () => openPage(context, const MomentsScreen()),
+              child: const Text('Open Archive →')),
+        ]),
+      Text('${state.momentCount} shared days saved together',
+          style: const TextStyle(color: mutedInk)),
+      gap(12),
       CozyCard(
-          color: rose,
-          child:
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Icon(Icons.auto_awesome_outlined, color: coral),
-            gap(12),
-            Text('365 days → 365 moments',
-                style: Theme.of(context).textTheme.titleLarge),
-            gap(8),
-            const Text(
-                'A fresh prompt every day. Your latest photos stay on Home for 24 hours and live on in your monthly memory capsules.'),
-            gap(),
-            OutlinedButton(
+          color: const Color(0xFFFBF0FC),
+          child: Row(children: [
+            const Icon(Icons.auto_stories_outlined, color: coral),
+            const SizedBox(width: 14),
+            const Expanded(
+                child: Text('Your moments, kept close in monthly capsules.')),
+            IconButton(
                 onPressed: () => openPage(context, const MomentsScreen()),
-                child: const Text('Open Memories →'))
+                icon: const Icon(Icons.arrow_forward_ios, size: 16)),
           ])),
     ]);
   }
@@ -719,42 +890,67 @@ class QuestionsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
-    return PageBody(children: [
-      const SectionHeading(
-          eyebrow: 'One question, two hearts',
-          title: 'A little more of you.',
-          subtitle: 'Make room for the conversations that matter.'),
-      Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: ['Fun', 'Deep', 'Future', 'Random']
-              .map((label) => ChoiceChip(
-                  label: Text(label),
-                  selected: state.home?['question']?['category']
-                          ?.toString()
-                          .toLowerCase() ==
-                      label.toLowerCase(),
-                  onSelected: state.busy
-                      ? null
-                      : (selected) async {
-                          if (!selected) return;
-                          if (state.home?['question_category_locked'] == true ||
-                              (state.home?['answers'] as List? ?? [])
-                                  .isNotEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                    content: Text(
-                                        'A partner has already answered. Choose a new category tomorrow.')));
-                            return;
-                          }
-                          final ok = await state.run(() => state
-                              .chooseQuestionCategory(label.toLowerCase()));
-                          if (!ok && context.mounted && state.error != null) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text(state.error!)));
-                          }
-                        }))
-              .toList()),
+    final locked = state.home?['question_category_locked'] == true ||
+        (state.home?['answers'] as List? ?? []).isNotEmpty;
+    return PageBody(background: const Color(0xFFFFF7FD), children: [
+      const NearTopBar(),
+      const Center(child: NearEyebrow('A daily ritual')),
+      gap(8),
+      const Text('Daily Question',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+              fontFamily: 'Newsreader',
+              fontSize: 32,
+              fontWeight: FontWeight.w600,
+              color: slate)),
+      gap(4),
+      const Text('Answer together. Uncover each other.',
+          textAlign: TextAlign.center, style: TextStyle(color: mutedInk)),
+      gap(24),
+      SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: ['Deep', 'Fun', 'Future', 'Random'].map((label) {
+              final selected = state.home?['question']?['category']
+                      ?.toString()
+                      .toLowerCase() ==
+                  label.toLowerCase();
+              return Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: ChoiceChip(
+                    label: Text(label),
+                    selected: selected,
+                    selectedColor: coral,
+                    showCheckmark: false,
+                    labelStyle: TextStyle(
+                        color: selected ? Colors.white : slate,
+                        fontWeight: FontWeight.w600),
+                    onSelected: state.busy
+                        ? null
+                        : (value) async {
+                            if (!value) return;
+                            if (locked) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                      content: Text(
+                                          'A partner has already answered. Choose a new category tomorrow.')));
+                              return;
+                            }
+                            final ok = await state.run(() => state
+                                .chooseQuestionCategory(label.toLowerCase()));
+                            if (!ok && context.mounted && state.error != null) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(state.error!)));
+                            }
+                          }),
+              );
+            }).toList(),
+          )),
+      if (locked) ...[
+        gap(8),
+        const Text('Category locked for today once answered',
+            style: TextStyle(fontSize: 12, color: mutedInk)),
+      ],
       gap(20),
       if (state.home != null)
         QuestionCard(
@@ -762,9 +958,12 @@ class QuestionsScreen extends StatelessWidget {
                 '${state.home!['day']}:${state.home!['question']?['category']}'),
             data: state.home!,
             today: true),
-      const Text(
-          'One question each day, across Fun, Deep, Future and Random. Answer separately, then reveal together.',
-          textAlign: TextAlign.center),
+      gap(12),
+      TextButton.icon(
+        onPressed: () => openPage(context, const MomentsScreen()),
+        icon: const Icon(Icons.auto_stories_outlined),
+        label: const Text('Browse our answered questions'),
+      ),
     ]);
   }
 }
@@ -776,54 +975,80 @@ class PhotoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
-    final photos = data['photos'] as List;
-    final own = photos.where((p) => p['user'] == state.me!['id']).firstOrNull;
+    final photos = data['photos'] as List? ?? [];
+    final own = photos.where((p) => p['user'] == state.me?['id']).firstOrNull;
     final partner =
-        photos.where((p) => p['user'] != state.me!['id']).firstOrNull;
+        photos.where((p) => p['user'] != state.me?['id']).firstOrNull;
+    final both = data['photos_revealed'] == true;
     return CozyCard(
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(today ? 'Today’s Photo' : data['day'] as String,
-          style: Theme.of(context).textTheme.titleLarge),
-      gap(6),
-      Text(data['photo_prompt'] as String),
-      gap(),
-      Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Expanded(
-            child: PhotoSlot(
-                photo: own,
-                label: 'You',
-                placeholder: today ? 'Share your moment' : 'No photo',
-                onTap: !today || own != null || state.busy
-                    ? null
-                    : () => state.run(() async {
-                          final picked = await ImagePicker().pickImage(
-                              source: ImageSource.gallery,
-                              maxWidth: 2048,
-                              maxHeight: 2048,
-                              imageQuality: 90);
-                          if (picked == null) return;
-                          await state.api.upload(picked);
-                          await state.reload();
-                        }))),
-        const SizedBox(width: 12),
-        Expanded(
-            child: PhotoSlot(
-                photo: partner,
-                label: partnerName(state),
-                placeholder: partner == null
-                    ? 'Waiting for their photo…'
-                    : 'Share yours to reveal',
-                locked: partner != null && partner['photo_url'] == null)),
-      ]),
-      gap(12),
-      Text(
-          data['photos_revealed'] == true
-              ? 'Together today ♥ · ${data['day']}'
-              : own != null
-                  ? '♥ Your photo is waiting… ${partnerName(state)} hasn’t shared yet.'
-                  : 'Share yours to unlock today’s pair.',
-          style: const TextStyle(fontSize: 12, color: coral)),
-    ]));
+        child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(children: [
+          Expanded(
+              child:
+                  NearEyebrow(today ? "Today's photo" : data['day'] as String)),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+                color: rose, borderRadius: BorderRadius.circular(20)),
+            child: Text(both ? 'Shared pair' : 'Daily duo',
+                style: const TextStyle(
+                    fontSize: 11, color: coral, fontWeight: FontWeight.w600)),
+          ),
+        ]),
+        gap(8),
+        Text(data['photo_prompt'] as String? ?? 'A little moment from today',
+            style: const TextStyle(
+                fontFamily: 'Newsreader',
+                fontStyle: FontStyle.italic,
+                fontSize: 20,
+                color: slate)),
+        gap(18),
+        Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Expanded(
+              child: PhotoSlot(
+                  photo: own,
+                  label: 'You',
+                  placeholder: today ? 'Share your moment' : 'No photo',
+                  onTap: !today || own != null || state.busy
+                      ? null
+                      : () => state.run(() async {
+                            final picked = await ImagePicker().pickImage(
+                                source: ImageSource.gallery,
+                                maxWidth: 2048,
+                                maxHeight: 2048,
+                                imageQuality: 90);
+                            if (picked == null) return;
+                            await state.api.upload(picked);
+                            await state.reload();
+                          }))),
+          const SizedBox(width: 12),
+          Expanded(
+              child: PhotoSlot(
+                  photo: partner,
+                  label: partnerName(state),
+                  placeholder: partner == null
+                      ? 'Waiting for their photo…'
+                      : 'Share yours to reveal',
+                  locked: partner != null && partner['photo_url'] == null)),
+        ]),
+        gap(14),
+        Row(children: [
+          Icon(both ? Icons.favorite : Icons.lock_outline,
+              color: coral, size: 16),
+          const SizedBox(width: 8),
+          Expanded(
+              child: Text(
+                  both
+                      ? 'Two moments, one shared story.'
+                      : own != null
+                          ? 'Your photo is saved. Waiting for ${partnerName(state)}.'
+                          : 'Share yours to unlock today’s pair.',
+                  style: const TextStyle(color: mutedInk, fontSize: 12))),
+        ]),
+      ],
+    ));
   }
 }
 
@@ -844,51 +1069,70 @@ class PhotoSlot extends StatelessWidget {
   Widget build(BuildContext context) {
     final api = context.read<AppState>().api;
     final url = photo?['photo_url'] as String?;
-    return Column(children: [
-      Semantics(
-          label: '$label: $placeholder',
-          button: onTap != null,
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: BorderRadius.circular(18),
-            child: AspectRatio(
-                aspectRatio: .72,
-                child: ClipRRect(
-                    borderRadius: BorderRadius.circular(18),
-                    child: url == null
-                        ? Container(
-                            color: beige,
-                            padding: const EdgeInsets.all(12),
-                            child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                      locked
-                                          ? Icons.lock_outline
-                                          : onTap != null
-                                              ? Icons.add_a_photo_outlined
-                                              : Icons.favorite_border,
-                                      color: coral),
-                                  gap(10),
-                                  Text(placeholder,
-                                      textAlign: TextAlign.center,
-                                      style: const TextStyle(fontSize: 12))
-                                ]))
-                        : Image.network(api.photoUrl(url),
-                            headers: api.photoHeaders(url),
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, error, stack) => const Center(
-                                child: Text('Pull to refresh photo',
-                                    textAlign: TextAlign.center)),
-                            loadingBuilder: (_, child, progress) =>
-                                progress == null
-                                    ? child
-                                    : const Center(
-                                        child: CircularProgressIndicator())))),
-          )),
-      gap(8),
-      Text(label, style: const TextStyle(fontSize: 12)),
-    ]);
+    return Semantics(
+      label: '$label: ${url == null ? placeholder : 'Photo shared'}',
+      button: onTap != null,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Container(
+          decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border.all(color: hairline),
+              borderRadius: BorderRadius.circular(18)),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            AspectRatio(
+              aspectRatio: .76,
+              child: ClipRRect(
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(17)),
+                child: url == null
+                    ? Container(
+                        color: const Color(0xFFF8F2F5),
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                                locked
+                                    ? Icons.lock_outline
+                                    : onTap != null
+                                        ? Icons.add_a_photo_outlined
+                                        : Icons.favorite_border,
+                                color: coral,
+                                size: 30),
+                            gap(12),
+                            Text(placeholder,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                    color: mutedInk, fontSize: 12)),
+                          ],
+                        ),
+                      )
+                    : Image.network(api.photoUrl(url),
+                        headers: api.photoHeaders(url),
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, error, stack) => const Center(
+                            child: Text('Pull to refresh photo',
+                                textAlign: TextAlign.center)),
+                        loadingBuilder: (_, child, progress) => progress == null
+                            ? child
+                            : const Center(child: CircularProgressIndicator())),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+              child: Text(label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w700, fontSize: 13)),
+            ),
+          ]),
+        ),
+      ),
+    );
   }
 }
 
@@ -902,76 +1146,143 @@ class QuestionCard extends StatefulWidget {
 
 class _QuestionCardState extends State<QuestionCard> {
   bool revealed = false;
-  Map get data => widget.data;
-  bool get today => widget.today;
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
+    final data = widget.data;
     final question = data['question'];
-    final answers = data['answers'] as List;
-    final answered = answers.any((a) => a['user'] == state.me!['id']);
-    return CozyCard(
-        color: const Color(0xFFF1EEE7),
+    final answers = data['answers'] as List? ?? [];
+    final own = answers.where((a) => a['user'] == state.me?['id']).firstOrNull;
+    final partner =
+        answers.where((a) => a['user'] != state.me?['id']).firstOrNull;
+    final both = data['answers_revealed'] == true;
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      Container(
+        padding: const EdgeInsets.all(22),
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(color: hairline),
+          borderRadius: BorderRadius.circular(24),
+        ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          if (question != null) ...[
-            Text((question['category'] as String).toUpperCase(),
-                style: const TextStyle(
-                    color: coral, fontSize: 10, letterSpacing: 2)),
-            gap(8)
-          ],
-          Text(today ? 'Today’s Question' : 'Our answers',
-              style: Theme.of(context).textTheme.titleLarge),
-          gap(12),
+          NearEyebrow(widget.today
+              ? "Today's prompt · ${question?['category'] ?? 'daily'}"
+              : 'Our answers'),
+          gap(16),
           Text(question?['question_text'] ?? 'A new question is on its way.',
-              style: const TextStyle(fontSize: 19, height: 1.4)),
-          gap(),
-          for (final answer in answers
-              .where((a) => revealed && data['answers_revealed'] == true))
-            Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Text(
-                  '${answer['user'] == state.me!['id'] ? 'You' : 'Your person'}: ${answer['answer_text']}'),
-            ),
-          if (today && question != null && !answered)
-            FilledButton(
-                onPressed: state.busy
-                    ? null
-                    : () async {
-                        final value = await textDialog(context, 'Your answer',
-                            'A little honesty brings us closer',
-                            maxLength: 5000, multiline: true);
-                        if (value == null || value.trim().isEmpty) return;
-                        await state.run(() async {
-                          await state.api.post('daily/answer/', {
-                            'answer_text': value,
-                            if (question['id'] != null)
-                              'question_id': question['id'],
-                            'question_category': question['category'],
-                          });
-                          await state.reload();
-                        });
-                      },
-                child: const Text('Answer')),
-          if (data['answers_revealed'] == true && !revealed) ...[
-            const Text('♥ Both answered'),
-            gap(12),
-            FilledButton(
-                onPressed: () => setState(() => revealed = true),
-                child: const Text('Reveal our answers'))
-          ],
-          if (answered && data['answers_revealed'] != true)
-            const Text('Your answer is saved. Waiting for your person ♥'),
-          if (data['answers_revealed'] != true) ...[
-            gap(8),
-            const Row(children: [
-              Icon(Icons.lock_outline, size: 16, color: coral),
+              style: const TextStyle(
+                  fontFamily: 'Newsreader',
+                  fontStyle: FontStyle.italic,
+                  fontSize: 26,
+                  height: 1.25,
+                  color: slate)),
+          gap(20),
+          Row(children: [
+            const Icon(Icons.favorite_border, color: coral, size: 17),
+            const SizedBox(width: 7),
+            Text('${answers.length} of 2 answered',
+                style: const TextStyle(color: coral, fontSize: 12)),
+          ]),
+        ]),
+      ),
+      if (own != null || partner != null) ...[
+        const Padding(
+            padding: EdgeInsets.only(bottom: 12),
+            child: NearEyebrow('Secret answers')),
+        if (own != null)
+          Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+                color: const Color(0xFFFBF0FC),
+                borderRadius: BorderRadius.circular(20)),
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('You · ${state.me?['full_name'] ?? 'Your answer'}',
+                  style: const TextStyle(fontWeight: FontWeight.w700)),
+              gap(10),
+              Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(15),
+                  decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(15)),
+                  child: Text(own['answer_text'] ?? 'Your answer is saved.',
+                      style: const TextStyle(height: 1.45))),
+            ]),
+          ),
+        if (partner != null)
+          Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+                color: lavender, borderRadius: BorderRadius.circular(20)),
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(partnerName(state),
+                  style: const TextStyle(fontWeight: FontWeight.w700)),
+              gap(10),
+              Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(15),
+                  decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(15)),
+                  child: revealed && both
+                      ? Text(partner['answer_text'] ?? '',
+                          style: const TextStyle(height: 1.45))
+                      : const Column(children: [
+                          Icon(Icons.lock_outline, color: coral),
+                          SizedBox(height: 7),
+                          Text('Tap Reveal to open both answers together.',
+                              textAlign: TextAlign.center),
+                        ])),
+            ]),
+          ),
+      ],
+      if (widget.today && question != null && own == null)
+        FilledButton(
+          onPressed: state.busy
+              ? null
+              : () async {
+                  final value = await textDialog(context, 'Your answer',
+                      'A little honesty brings us closer',
+                      maxLength: 5000, multiline: true);
+                  if (value == null || value.trim().isEmpty) return;
+                  await state.run(() async {
+                    await state.api.post('daily/answer/', {
+                      'answer_text': value,
+                      if (question['id'] != null) 'question_id': question['id'],
+                      'question_category': question['category'],
+                    });
+                    await state.reload();
+                  });
+                },
+          child: const Text('Answer today’s question'),
+        ),
+      if (both && !revealed)
+        FilledButton.icon(
+          onPressed: () => setState(() => revealed = true),
+          icon: const Icon(Icons.auto_awesome_outlined),
+          label: const Text('Reveal our answers'),
+        ),
+      if (own != null && !both)
+        const Padding(
+            padding: EdgeInsets.only(top: 4, bottom: 12),
+            child: Text('Your answer is saved. Waiting for your person ♥',
+                style: TextStyle(color: mutedInk))),
+      if (!both)
+        const Padding(
+            padding: EdgeInsets.only(bottom: 18),
+            child: Row(children: [
+              Icon(Icons.lock_outline, color: coral, size: 16),
               SizedBox(width: 8),
               Expanded(
-                  child: Text('Reveal · unlocks when you both answer',
-                      style: TextStyle(fontSize: 12)))
-            ])
-          ],
-        ]));
+                  child: Text('Unlocks when you both answer',
+                      style: TextStyle(color: mutedInk, fontSize: 12))),
+            ])),
+    ]);
   }
 }
 
@@ -996,32 +1307,84 @@ class MomentsScreen extends StatelessWidget {
             child:
                 Text('Your first photo or answer starts your first capsule.')),
       for (final month in months.entries)
-        CozyCard(
-            color: rose,
-            child:
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Icon(Icons.collections_bookmark_outlined,
-                  color: coral, size: 36),
-              gap(20),
-              Text(
-                  DateFormat('MMMM yyyy')
-                      .format(DateTime.parse('${month.key}-01')),
-                  style: Theme.of(context).textTheme.headlineSmall),
-              gap(6),
-              Text(month.key ==
-                      (state.home?['day'] as String? ?? '').substring(
-                          0,
-                          (state.home?['day'] as String? ?? '').length >= 7
-                              ? 7
-                              : 0)
-                  ? 'Our story is still growing ♥'
-                  : 'A chapter of us, saved for you.'),
-              gap(16),
-              FilledButton(
-                  onPressed: () =>
-                      openPage(context, AlbumScreen(month: month.key)),
-                  child: const Text('Open capsule →')),
-            ])),
+        Builder(builder: (context) {
+          final previews = month.value
+              .expand<dynamic>((day) => day['photos'] as List? ?? [])
+              .where((photo) => photo['photo_url'] != null)
+              .take(3)
+              .toList();
+          return CozyCard(
+            color: const Color(0xFFFBF0FC),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(children: [
+                  Expanded(
+                      child: Text(
+                          DateFormat('MMMM yyyy')
+                              .format(DateTime.parse('${month.key}-01')),
+                          style: Theme.of(context).textTheme.headlineSmall)),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                        color: lavender,
+                        borderRadius: BorderRadius.circular(20)),
+                    child: Text('${month.value.length} days',
+                        style: const TextStyle(color: mutedInk, fontSize: 11)),
+                  ),
+                ]),
+                gap(14),
+                Row(children: [
+                  for (var i = 0; i < 3; i++) ...[
+                    if (i > 0) const SizedBox(width: 7),
+                    Expanded(
+                        child: AspectRatio(
+                      aspectRatio: 1,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: i < previews.length
+                            ? Image.network(
+                                state.api.photoUrl(
+                                    previews[i]['photo_url'] as String),
+                                headers: state.api.photoHeaders(
+                                    previews[i]['photo_url'] as String),
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, error, stack) =>
+                                    const ColoredBox(
+                                        color: oat,
+                                        child: Icon(Icons.image_outlined,
+                                            color: coral)))
+                            : const ColoredBox(
+                                color: oat,
+                                child:
+                                    Icon(Icons.favorite_border, color: coral)),
+                      ),
+                    )),
+                  ],
+                ]),
+                gap(12),
+                Text(
+                    month.key ==
+                            (state.home?['day'] as String? ?? '').substring(
+                                0,
+                                (state.home?['day'] as String? ?? '').length >=
+                                        7
+                                    ? 7
+                                    : 0)
+                        ? 'Our story is still growing ♥'
+                        : 'A chapter of us, saved for you.',
+                    style: const TextStyle(color: mutedInk, fontSize: 12)),
+                Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                        onPressed: () =>
+                            openPage(context, AlbumScreen(month: month.key)),
+                        child: const Text('Open capsule →'))),
+              ],
+            ),
+          );
+        }),
       if (state.nextMoments != null)
         TextButton(
             onPressed: state.busy ? null : () => state.run(state.moreMoments),
@@ -1096,65 +1459,216 @@ class DatesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
-    return PageBody(children: [
-      const SectionHeading(
-          eyebrow: 'Close from anywhere',
-          title: 'Virtual dates',
-          subtitle: 'Turn “I miss you” into a plan.'),
-      FilledButton.icon(
-          onPressed: state.busy ? null : () => planDate(context),
-          icon: const Icon(Icons.add),
-          label: const Text('Plan a date')),
-      gap(24),
-      if (state.dates.isEmpty)
-        const CozyCard(
+    final upcoming = state.dates
+        .where((date) =>
+            date['status'] != 'declined' &&
+            DateTime.parse(date['scheduled_at']).isAfter(DateTime.now()))
+        .toList();
+    final past = state.dates
+        .where((date) =>
+            date['status'] == 'declined' ||
+            !DateTime.parse(date['scheduled_at']).isAfter(DateTime.now()))
+        .toList();
+    return PageBody(background: const Color(0xFFFFF7FD), children: [
+      const NearTopBar(),
+      Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Expanded(
             child:
-                Text('No plans yet. Invite your person to something lovely.')),
-      for (final date in state.dates)
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const NearEyebrow('Shared ritual'),
+          gap(5),
+          Text('Virtual Dates',
+              style: Theme.of(context).textTheme.headlineLarge),
+          gap(4),
+          const Text('Shared moments across the distance.',
+              style: TextStyle(color: mutedInk, fontSize: 13)),
+        ])),
+        FilledButton.icon(
+            onPressed: state.busy ? null : () => planDate(context),
+            icon: const Icon(Icons.add, size: 18),
+            label: const Text('Plan date')),
+      ]),
+      gap(24),
+      if (upcoming.isEmpty)
         CozyCard(
             child:
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            Expanded(
-                child: Text(activities[date['type']] ?? date['type'] as String,
-                    style: Theme.of(context).textTheme.titleLarge)),
-            Chip(label: Text(date['status'] as String))
-          ]),
-          Text(dateLabel(date['scheduled_at'])),
+          const NearEyebrow('Our next date'),
+          gap(9),
+          Text('A moment to look forward to',
+              style: Theme.of(context).textTheme.titleLarge),
           gap(8),
-          if ((date['detail'] ?? '').isNotEmpty)
-            Text(date['detail'],
-                style: const TextStyle(fontWeight: FontWeight.w600)),
-          Text(date['note'] as String),
-          if (date['status'] == 'pending' &&
-              date['creator'] != state.me!['id'] &&
-              DateTime.parse(date['scheduled_at'] as String)
-                  .isAfter(DateTime.now())) ...[
-            gap(),
-            Wrap(spacing: 12, children: [
-              for (final status in ['accepted', 'declined'])
-                OutlinedButton(
-                    onPressed: state.busy
-                        ? null
-                        : () => state.run(() async {
-                              await state.api.post(
-                                  'dates/${date['id']}/respond/',
-                                  {'status': status});
-                              await state.reload();
-                            }),
-                    child: Text(status == 'accepted' ? 'Accept' : 'Decline')),
-              TextButton(
-                  onPressed:
-                      state.busy ? null : () => rescheduleDate(context, date),
-                  child: const Text('Choose another time')),
-            ]),
-          ],
+          const Text('Invite your person to share a little time together.'),
         ])),
+      for (final date in upcoming) DateInvitationCard(date: date),
+      gap(10),
+      Text('Plan Your Next Togetherness',
+          style: Theme.of(context).textTheme.titleLarge),
+      gap(4),
+      const Text('Little rituals for two screens',
+          style: TextStyle(color: mutedInk, fontSize: 13)),
+      gap(14),
+      for (final entry in [
+        (
+          'movie',
+          Icons.movie_outlined,
+          'Movie night',
+          'Pick a film to watch together.'
+        ),
+        (
+          'dinner',
+          Icons.restaurant_outlined,
+          'Cook together',
+          'Choose a recipe and share the moment.'
+        ),
+        (
+          'gaming',
+          Icons.sports_esports_outlined,
+          'Play together',
+          'Make time for a little fun.'
+        ),
+      ])
+        CozyCard(
+            child: Row(children: [
+          Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                  color: apricot, borderRadius: BorderRadius.circular(14)),
+              child: Icon(entry.$2, color: coral)),
+          const SizedBox(width: 14),
+          Expanded(
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                Text(entry.$3,
+                    style: const TextStyle(fontWeight: FontWeight.w700)),
+                Text(entry.$4,
+                    style: const TextStyle(color: mutedInk, fontSize: 12)),
+              ])),
+          IconButton(
+              onPressed: () => planDate(context, activity: entry.$1),
+              icon: const Icon(Icons.arrow_forward_rounded, color: coral)),
+        ])),
+      if (past.isNotEmpty) ...[
+        gap(8),
+        Text('Past moments', style: Theme.of(context).textTheme.titleLarge),
+        gap(10),
+        for (final date in past)
+          CozyCard(
+              child: ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text(activities[date['type']] ?? date['type'] as String),
+            subtitle: Text(dateLabel(date['scheduled_at'])),
+            trailing: Text(date['status'] as String,
+                style: const TextStyle(color: mutedInk, fontSize: 12)),
+          )),
+      ],
       if (state.nextDates != null)
         TextButton(
             onPressed: state.busy ? null : () => state.run(state.moreDates),
             child: const Text('More dates')),
     ]);
+  }
+}
+
+class DateInvitationCard extends StatelessWidget {
+  final Map date;
+  const DateInvitationCard({super.key, required this.date});
+  @override
+  Widget build(BuildContext context) {
+    final state = context.watch<AppState>();
+    final incoming = date['creator'] != state.me?['id'];
+    final pending = date['status'] == 'pending';
+    return CozyCard(
+        child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+              color: apricot, borderRadius: BorderRadius.circular(20)),
+          child: Text(
+              pending
+                  ? incoming
+                      ? 'New invitation'
+                      : 'Invitation sent'
+                  : 'It’s a date',
+              style: const TextStyle(
+                  color: coral, fontSize: 11, fontWeight: FontWeight.w700)),
+        ),
+        gap(12),
+        Text(activities[date['type']] ?? date['type'] as String,
+            style: Theme.of(context).textTheme.titleLarge),
+        gap(15),
+        Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(15),
+            decoration: BoxDecoration(
+                color: const Color(0xFFFBF0FC),
+                borderRadius: BorderRadius.circular(15)),
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(dateLabel(date['scheduled_at']),
+                  style: const TextStyle(fontWeight: FontWeight.w600)),
+              if ((date['detail'] ?? '').toString().isNotEmpty) ...[
+                gap(5),
+                Text(date['detail'].toString()),
+              ],
+            ])),
+        if ((date['note'] ?? '').toString().isNotEmpty) ...[
+          gap(12),
+          Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                  color: oat, borderRadius: BorderRadius.circular(15)),
+              child: Text('“${date['note']}”',
+                  style: const TextStyle(
+                      fontFamily: 'Newsreader',
+                      fontStyle: FontStyle.italic,
+                      fontSize: 18))),
+        ],
+        if (pending && incoming) ...[
+          gap(16),
+          SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                  onPressed: state.busy
+                      ? null
+                      : () => state.run(() async {
+                            await state.api.post('dates/${date['id']}/respond/',
+                                {'status': 'accepted'});
+                            await state.reload();
+                          }),
+                  icon: const Icon(Icons.check_circle_outline),
+                  label: const Text('Accept date'))),
+          Row(children: [
+            Expanded(
+                child: OutlinedButton(
+                    onPressed:
+                        state.busy ? null : () => rescheduleDate(context, date),
+                    child: const Text('Suggest another time'))),
+            TextButton(
+                onPressed: state.busy
+                    ? null
+                    : () => state.run(() async {
+                          await state.api.post('dates/${date['id']}/respond/',
+                              {'status': 'declined'});
+                          await state.reload();
+                        }),
+                child: const Text('Decline')),
+          ]),
+        ] else ...[
+          gap(12),
+          Text(
+              pending
+                  ? 'Waiting for ${partnerName(state)} to reply'
+                  : 'Time together is on the calendar ♥',
+              style: const TextStyle(color: mutedInk, fontSize: 12)),
+        ],
+      ],
+    ));
   }
 }
 
@@ -1168,22 +1682,23 @@ const activities = {
   'talk': '💬 Just talk',
   'surprise': '✨ Surprise'
 };
-Future<void> planDate(BuildContext context) async {
+Future<void> planDate(BuildContext context, {String? activity}) async {
   await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      builder: (_) => const PlanDateSheet());
+      builder: (_) => PlanDateSheet(initialActivity: activity));
 }
 
 class PlanDateSheet extends StatefulWidget {
-  const PlanDateSheet({super.key});
+  final String? initialActivity;
+  const PlanDateSheet({super.key, this.initialActivity});
   @override
   State<PlanDateSheet> createState() => _PlanDateSheetState();
 }
 
 class _PlanDateSheetState extends State<PlanDateSheet> {
-  String activity = 'movie';
+  late String activity = widget.initialActivity ?? 'movie';
   DateTime scheduled = DateTime.now().add(const Duration(days: 1));
   final note = TextEditingController();
   final detail = TextEditingController();
@@ -1531,58 +2046,174 @@ class CountdownsScreen extends StatelessWidget {
     final state = context.watch<AppState>();
     final today = DateTime.parse(
         state.home?['day'] ?? DateFormat('yyyy-MM-dd').format(DateTime.now()));
-    return PageBody(children: [
-      const SectionHeading(
-          eyebrow: 'Good things are getting closer',
-          title: 'Worth the wait.',
-          subtitle: 'Our next hug. Our next adventure. Our milestones.'),
-      FilledButton.icon(
-          onPressed: state.busy ? null : () => addCountdown(context),
-          icon: const Icon(Icons.add),
-          label: const Text('Add a countdown')),
-      gap(28),
-      if (state.countdowns.isEmpty)
-        const CozyCard(
+    final meeting = state.home?['meeting'] as Map?;
+    final others = state.countdowns
+        .where((event) => event['id'] != meeting?['id'])
+        .toList();
+    return PageBody(background: const Color(0xFFFFF7FD), children: [
+      const NearTopBar(),
+      Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Expanded(
             child:
-                Text('Give your next happy moment a place on your timeline.')),
-      for (final event in state.countdowns)
-        IntrinsicHeight(
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Text('Worth the wait.',
+              style: TextStyle(
+                  fontFamily: 'Newsreader',
+                  fontStyle: FontStyle.italic,
+                  fontSize: 30,
+                  color: coral)),
+          gap(5),
+          const Text('Our next hug. Our milestones.',
+              style: TextStyle(color: mutedInk, fontSize: 13)),
+        ])),
+        if (MediaQuery.sizeOf(context).width < 360)
+          IconButton(
+              tooltip: 'Add milestone',
+              onPressed: state.busy ? null : () => addCountdown(context),
+              icon: const Icon(Icons.add, color: coral))
+        else
+          OutlinedButton.icon(
+              onPressed: state.busy ? null : () => addCountdown(context),
+              icon: const Icon(Icons.add, size: 18),
+              label: const Text('Add milestone')),
+      ]),
+      gap(24),
+      if (meeting != null)
+        Container(
+          margin: const EdgeInsets.only(bottom: 24),
+          padding: const EdgeInsets.all(23),
+          decoration: BoxDecoration(
+            border: Border.all(color: rose),
+            borderRadius: BorderRadius.circular(26),
+            gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFFF7E8ED), Color(0xFFFFFDFD)]),
+          ),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const NearEyebrow('Next meeting'),
+            gap(20),
+            SizedBox(
+                width: double.infinity,
+                child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text('${state.home?['days_until_meeting'] ?? '—'}',
+                              style: const TextStyle(
+                                  fontFamily: 'Newsreader',
+                                  fontSize: 86,
+                                  letterSpacing: -5,
+                                  height: 1,
+                                  color: coral)),
+                          const Padding(
+                              padding: EdgeInsets.only(left: 10, bottom: 10),
+                              child:
+                                  Text('days', style: TextStyle(fontSize: 20))),
+                        ]))),
+            const Text('until we hold each other',
+                style: TextStyle(
+                    fontFamily: 'Newsreader',
+                    fontStyle: FontStyle.italic,
+                    fontSize: 22,
+                    color: slate)),
+            gap(18),
+            const Divider(),
+            Text(meeting['title'] ?? 'Our next meeting',
+                style: Theme.of(context).textTheme.titleLarge),
+            gap(5),
+            Text(
+                DateFormat('EEEE, MMMM d, yyyy')
+                    .format(DateTime.parse(meeting['target_date'])),
+                style: const TextStyle(color: mutedInk)),
+            if ((meeting['location'] ?? '').toString().isNotEmpty) ...[
+              gap(5),
+              Text(meeting['location'].toString(),
+                  style: const TextStyle(color: mutedInk)),
+            ],
+            gap(14),
+            CountdownActions(event: meeting),
+          ]),
+        )
+      else
+        CozyCard(
             child:
-                Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          SizedBox(
-              width: 26,
-              child: Column(children: [
-                const Icon(Icons.favorite, size: 16, color: coral),
-                Expanded(child: Container(width: 1, color: rose))
-              ])),
-          const SizedBox(width: 12),
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const NearEyebrow('The next hug'),
+          gap(10),
+          Text('Make room for a reunion',
+              style: Theme.of(context).textTheme.titleLarge),
+          gap(8),
+          const Text('Add a meeting to start counting down together.'),
+          TextButton(
+              onPressed: () => addCountdown(context),
+              child: const Text('Add our next meeting →')),
+        ])),
+      Row(children: [
+        Expanded(
+            child: Text('Upcoming Milestones',
+                style: Theme.of(context).textTheme.titleLarge)),
+        Text('${others.length} saved',
+            style: const TextStyle(color: mutedInk, fontSize: 12)),
+      ]),
+      gap(15),
+      for (final event in others)
+        CozyCard(
+            child: Row(children: [
+          Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                  color: event['kind'] == 'birthday' ? apricot : lavender,
+                  borderRadius: BorderRadius.circular(14)),
+              child: Icon(
+                  event['kind'] == 'birthday'
+                      ? Icons.cake_outlined
+                      : Icons.favorite_border,
+                  color: coral)),
+          const SizedBox(width: 13),
           Expanded(
-              child: CozyCard(
-                  color: event['kind'] == 'meeting' ? rose : Colors.white,
-                  child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(countdownKinds[event['kind']] ?? 'A special day',
-                            style: const TextStyle(fontSize: 11, color: coral)),
-                        gap(8),
-                        Text(event['title'],
-                            style: Theme.of(context).textTheme.titleLarge),
-                        gap(12),
-                        Text(
-                            countdownLabel(DateTime.parse(event['target_date'])
-                                .difference(today)
-                                .inDays),
-                            style: const TextStyle(
-                                fontSize: 32,
-                                fontWeight: FontWeight.w300,
-                                color: coral)),
-                        gap(8),
-                        Text(DateFormat('MMMM d, yyyy')
-                            .format(DateTime.parse(event['target_date']))),
-                        if ((event['location'] ?? '').isNotEmpty)
-                          Text(event['location']),
-                        CountdownActions(event: event as Map),
-                      ]))),
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                NearEyebrow(countdownKinds[event['kind']] ?? 'Milestone'),
+                gap(4),
+                Text(event['title'],
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.w700)),
+                Text(
+                    DateFormat('MMM d, yyyy')
+                        .format(DateTime.parse(event['target_date'])),
+                    style: const TextStyle(color: mutedInk, fontSize: 12)),
+              ])),
+          Column(children: [
+            Text(
+                '${DateTime.parse(event['target_date']).difference(today).inDays}',
+                style: const TextStyle(
+                    fontSize: 27, fontWeight: FontWeight.w700, color: slate)),
+            const Text('DAYS',
+                style: TextStyle(
+                    fontSize: 9, fontWeight: FontWeight.w700, color: mutedInk)),
+            PopupMenuButton<String>(
+                icon: const Icon(Icons.more_vert, size: 19),
+                onSelected: (value) {
+                  if (value == 'edit') {
+                    addCountdown(context, event: event as Map);
+                  }
+                  if (value == 'delete') {
+                    deleteCountdown(context, event as Map);
+                  }
+                },
+                itemBuilder: (_) => const [
+                      PopupMenuItem(value: 'edit', child: Text('Edit')),
+                      PopupMenuItem(value: 'delete', child: Text('Delete')),
+                    ]),
+          ]),
         ])),
     ]);
   }

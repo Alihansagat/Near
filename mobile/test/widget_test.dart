@@ -10,7 +10,7 @@ void main() {
     final state = AppState(Api())..starting = false;
     await tester.pumpWidget(
         ChangeNotifierProvider.value(value: state, child: const NearApp()));
-    expect(find.text('NEAR'), findsOneWidget);
+    expect(find.text('near·'), findsOneWidget);
     expect(find.text('Welcome back'), findsOneWidget);
     await tester.tap(find.text('New here? Create an account'));
     await tester.pump();

@@ -29,6 +29,22 @@ flutter:
     - family: Inter
       fonts:
         - asset: assets/fonts/Inter.ttf
+    - family: Newsreader
+      fonts:
+        - asset: assets/fonts/stitch/Newsreader-Regular.ttf
+        - asset: assets/fonts/stitch/Newsreader-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/stitch/Newsreader-Italic.ttf
+          style: italic
+    - family: Plus Jakarta Sans
+      fonts:
+        - asset: assets/fonts/stitch/PlusJakartaSans-Regular.ttf
+        - asset: assets/fonts/stitch/PlusJakartaSans-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/stitch/PlusJakartaSans-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/stitch/PlusJakartaSans-Bold.ttf
+          weight: 700
   assets:
     - assets/mascots/hearts-moods.png
     - assets/maps/land.json

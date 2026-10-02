@@ -1,8 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter/material.dart';
 import 'life_screens.dart';
 import 'package:provider/provider.dart';
@@ -19,10 +20,10 @@ import 'theme.dart';
 import 'distance.dart';
 
 const featureTitles = {
-  'envelopes': '💌 Open When',
+  'envelopes': 'Open When',
   'story': 'Our Story',
-  'places': '📍 Our Map',
-  'wishlist': '✨ Our Wishlist',
+  'places': 'Our Map',
+  'wishlist': 'Our Wishlist',
   'messages': 'Messages'
 };
 const envelopeTitles = [
@@ -41,64 +42,94 @@ class RelationshipHub extends StatelessWidget {
         ? couple['user_2']
         : couple['user_1'];
     final mood = HeartMood.parse(partner?['mood']);
-    return Column(children: [
+    const sections = [
+      ('envelopes', Icons.mark_email_unread_outlined),
+      ('story', Icons.auto_stories_outlined),
+      ('places', Icons.location_on_outlined),
+      ('wishlist', Icons.favorite_border),
+    ];
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       CozyCard(
+          color: const Color(0xFFFBF0FC),
           child:
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('🎭 Mood', style: Theme.of(context).textTheme.titleLarge),
-        gap(12),
-        if (state.me?['mood_day'] != state.home?['day'])
-          const Text('How are you feeling today?'),
-        TextButton(
-            onPressed: () => showMoodPicker(context, state, couple),
-            child: Text(state.me?['mood_day'] == state.home?['day']
-                ? 'Update mood'
-                : 'Share your mood')),
-        if (mood != null)
-          Text('${partnerName(state)} is feeling ${mood.label}'),
-        if (mood != null && partner?['mood_day'] != state.home?['day'])
-          const Text('Last shared mood'),
-        if (partner != null)
-          Wrap(spacing: 8, children: [
-            OutlinedButton(
-                onPressed: state.busy
-                    ? null
-                    : () async {
-                        final ok = await state
-                            .run(() => state.api.post('messages/hug/'));
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                              content:
-                                  Text(ok ? 'Hug sent 🫂' : state.error!)));
-                        }
-                      },
-                child: const Text('Send hug 🫂')),
-            OutlinedButton(
-                onPressed: () => openPage(
-                    context, const RelationshipScreen(kind: 'messages')),
-                child: const Text('Send message')),
-          ]),
+            Row(children: [
+              const Icon(Icons.favorite_outline, color: coral),
+              const SizedBox(width: 10),
+              Expanded(
+                  child: Text('Mood',
+                      style: Theme.of(context).textTheme.titleLarge)),
+              TextButton(
+                  onPressed: () => showMoodPicker(context, state, couple),
+                  child: Text(state.me?['mood_day'] == state.home?['day']
+                      ? 'Update mood'
+                      : 'Share your mood')),
+            ]),
+            gap(6),
+            if (state.me?['mood_day'] != state.home?['day'])
+              const Text('How are you feeling today?',
+                  style: TextStyle(color: mutedInk)),
+            if (mood != null)
+              Text('${partnerName(state)} is feeling ${mood.label}',
+                  style: const TextStyle(color: mutedInk)),
+            if (mood != null && partner?['mood_day'] != state.home?['day'])
+              const Text('Last shared mood',
+                  style: TextStyle(color: mutedInk, fontSize: 11)),
+            if (partner != null) ...[
+              gap(12),
+              Wrap(spacing: 8, children: [
+                OutlinedButton(
+                    onPressed: state.busy
+                        ? null
+                        : () async {
+                            final ok = await state
+                                .run(() => state.api.post('messages/hug/'));
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                      content: Text(
+                                          ok ? 'Hug sent 🫂' : state.error!)));
+                            }
+                          },
+                    child: const Text('Send hug 🫂')),
+                OutlinedButton(
+                    onPressed: () => openPage(
+                        context, const RelationshipScreen(kind: 'messages')),
+                    child: const Text('Send message')),
+              ]),
+            ],
+          ])),
+      Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: Text('Our little world',
+              style: Theme.of(context).textTheme.headlineSmall)),
+      CozyCard(
+          child: Column(children: [
+        for (var index = 0; index < sections.length; index++) ...[
+          if (index > 0) const Divider(height: 1),
+          ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Icon(sections[index].$2, color: coral),
+              title: Text(featureTitles[sections[index].$1]!),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => openPage(
+                  context, RelationshipScreen(kind: sections[index].$1))),
+        ],
+        const Divider(height: 1),
+        ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.event_outlined, color: coral),
+            title: const Text('Important dates'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => openPage(context, const ImportantDatesScreen())),
+        const Divider(height: 1),
+        ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.auto_awesome_outlined, color: coral),
+            title: const Text('Near Recap'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => openPage(context, const RecapScreen())),
       ])),
-      for (final kind in ['envelopes', 'story', 'places', 'wishlist'])
-        Card(
-            child: ListTile(
-                title: Text(featureTitles[kind]!),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () =>
-                    openPage(context, RelationshipScreen(kind: kind)))),
-      Card(
-          child: ListTile(
-              leading: const Icon(Icons.celebration_outlined),
-              title: const Text('Important dates'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => openPage(context, const ImportantDatesScreen()))),
-      Card(
-          child: ListTile(
-              leading: const Icon(Icons.auto_awesome_outlined),
-              title: const Text('Near Recap'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => openPage(context, const RecapScreen()))),
-      gap(),
     ]);
   }
 }
@@ -164,9 +195,17 @@ class _RelationshipScreenState extends State<RelationshipScreen> {
           await load();
         },
         child: ListView(padding: const EdgeInsets.all(24), children: [
+          NearEyebrow(switch (widget.kind) {
+            'envelopes' => 'Letters for the moments that matter',
+            'story' => 'The chapters of us',
+            'places' => 'Across the distance',
+            'wishlist' => 'Dreaming together',
+            _ => 'Little notes from us',
+          }),
+          gap(7),
           Text(featureTitles[widget.kind]!,
               style: Theme.of(context).textTheme.headlineLarge),
-          gap(),
+          gap(22),
           if (widget.kind == 'places') OurMap(places: rows),
           FilledButton.icon(
               onPressed: edit,
@@ -192,55 +231,114 @@ class _RelationshipScreenState extends State<RelationshipScreen> {
             }),
           for (final row in rows) ...[
             if (widget.kind == 'story')
-              CozyCard(
-                  child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                    Text(
-                        '${row['emoji']} ${DateFormat('MMMM d, yyyy').format(DateTime.parse(row['date']))}: ${row['text']}'),
-                    if (row['location'] != '')
-                      Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          child: Text('📍 ${row['location']}')),
-                    if (row['photo_url'] != null)
-                      privateImage(state.api, row['photo_url']),
-                  ]))
+              Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Column(children: [
+                  Container(
+                      width: 20,
+                      height: 20,
+                      decoration: const BoxDecoration(
+                          color: rose, shape: BoxShape.circle),
+                      child:
+                          const Icon(Icons.favorite, color: coral, size: 11)),
+                  Container(width: 1, height: 155, color: hairline),
+                ]),
+                const SizedBox(width: 12),
+                Expanded(
+                    child: CozyCard(
+                        child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                      NearEyebrow(DateFormat('MMMM d, yyyy')
+                          .format(DateTime.parse(row['date']))),
+                      gap(9),
+                      Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                                child: Text(row['text'],
+                                    style: const TextStyle(
+                                        fontFamily: 'Newsreader',
+                                        fontSize: 22,
+                                        color: slate))),
+                            if ((row['emoji'] ?? '').toString().isNotEmpty)
+                              Text(row['emoji'].toString(),
+                                  style: const TextStyle(fontSize: 20)),
+                          ]),
+                      if ((row['location'] ?? '').toString().isNotEmpty) ...[
+                        gap(9),
+                        Row(children: [
+                          const Icon(Icons.location_on_outlined,
+                              color: coral, size: 16),
+                          const SizedBox(width: 4),
+                          Expanded(
+                              child: Text(row['location'],
+                                  style: const TextStyle(color: mutedInk))),
+                        ]),
+                      ],
+                      if (row['photo_url'] != null) ...[
+                        gap(12),
+                        privateImage(state.api, row['photo_url']),
+                      ],
+                    ]))),
+              ])
             else if (widget.kind == 'envelopes')
               CozyCard(
+                  color: const Color(0xFFFBF0FC),
                   child: ListTile(
-                      leading: const Text('💌', style: TextStyle(fontSize: 30)),
-                      title: Text(row['title']),
+                      contentPadding: EdgeInsets.zero,
+                      leading: Container(
+                          width: 50,
+                          height: 50,
+                          decoration: BoxDecoration(
+                              color: rose,
+                              borderRadius: BorderRadius.circular(15)),
+                          child: const Icon(Icons.mark_email_unread_outlined,
+                              color: coral)),
+                      title: Text(row['title'],
+                          style: const TextStyle(
+                              fontFamily: 'Newsreader',
+                              fontSize: 21,
+                              color: slate)),
                       subtitle: Text(row['creator'] == state.me?['id']
                           ? 'From you'
                           : 'From ${partnerName(state)}'),
+                      trailing: const Icon(Icons.chevron_right, color: coral),
                       onTap: () =>
                           openPage(context, EnvelopeDetail(envelope: row))))
             else if (widget.kind == 'wishlist')
               CozyCard(
-                  child: Column(children: [
-                CheckboxListTile(
-                    title: Text(row['title']),
-                    value: row['completed'],
-                    onChanged: state.busy
-                        ? null
-                        : (value) async {
-                            if (await state.run(() => state.api.patch(
-                                'wishlist/${row['id']}/',
-                                {'completed': value}))) {
+                  color: const Color(0xFFFBF0FC),
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const NearEyebrow('A wish for us'),
+                        CheckboxListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(row['title']),
+                            value: row['completed'],
+                            onChanged: state.busy
+                                ? null
+                                : (value) async {
+                                    if (await state.run(() => state.api.patch(
+                                        'wishlist/${row['id']}/',
+                                        {'completed': value}))) {
+                                      await load();
+                                    }
+                                  }),
+                        if ((row['report'] ?? '').isNotEmpty)
+                          Text(row['report'],
+                              style: const TextStyle(color: mutedInk)),
+                        if (row['report_photo_url'] != null)
+                          privateImage(state.api, row['report_photo_url']),
+                        TextButton.icon(
+                            icon:
+                                const Icon(Icons.add_photo_alternate_outlined),
+                            label: const Text('Add completion report'),
+                            onPressed: () async {
+                              await openWishReport(context, row);
                               await load();
-                            }
-                          }),
-                if ((row['report'] ?? '').isNotEmpty) Text(row['report']),
-                if (row['report_photo_url'] != null)
-                  privateImage(state.api, row['report_photo_url']),
-                TextButton.icon(
-                    icon: const Icon(Icons.add_photo_alternate_outlined),
-                    label: const Text('Add completion report'),
-                    onPressed: () async {
-                      await openWishReport(context, row);
-                      await load();
-                    }),
-              ]))
+                            }),
+                      ]))
             else if (widget.kind == 'messages')
               CozyCard(
                   child: Column(
@@ -258,7 +356,9 @@ class _RelationshipScreenState extends State<RelationshipScreen> {
             else
               CozyCard(
                   child: ListTile(
-                      leading: const Text('📍'),
+                      contentPadding: EdgeInsets.zero,
+                      leading:
+                          const Icon(Icons.location_on_outlined, color: coral),
                       title: Text(row['title']),
                       subtitle:
                           Text('${row['latitude']}, ${row['longitude']}'))),
@@ -712,19 +812,47 @@ class OurMap extends StatelessWidget {
     ];
     return CozyCard(
         child: Column(children: [
-      const Text('YOU 📍'),
-      const Text('↓', style: TextStyle(fontSize: 26)),
-      Text(
-          distance == null
-              ? '— km'
-              : '${NumberFormat('#,##0', 'en_US').format(distance)} km',
-          style: Theme.of(context).textTheme.headlineLarge),
-      const Text('↑', style: TextStyle(fontSize: 26)),
-      const Text('PARTNER 📍'),
-      gap(),
-      Text(positioned
-          ? 'Calculated from your shared coordinates'
-          : 'Saved distance · Add both locations to calculate'),
+      Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
+          decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              gradient: const LinearGradient(
+                  colors: [Color(0xFFF8EBF0), Color(0xFFF5F0FA)])),
+          child: Column(children: [
+            const NearEyebrow('Our distance'),
+            gap(16),
+            const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Icon(Icons.location_on_outlined, color: coral, size: 16),
+              SizedBox(width: 5),
+              Text('YOU',
+                  style: TextStyle(
+                      color: mutedInk, letterSpacing: 2, fontSize: 11)),
+            ]),
+            const Icon(Icons.arrow_downward, color: coral, size: 18),
+            Text(
+                distance == null
+                    ? '— km'
+                    : '${NumberFormat('#,##0', 'en_US').format(distance)} km',
+                style: const TextStyle(
+                    fontFamily: 'Newsreader', fontSize: 42, color: slate)),
+            const Icon(Icons.arrow_upward, color: coral, size: 18),
+            const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Icon(Icons.location_on_outlined, color: coral, size: 16),
+              SizedBox(width: 5),
+              Text('PARTNER',
+                  style: TextStyle(
+                      color: mutedInk, letterSpacing: 2, fontSize: 11)),
+            ]),
+            gap(12),
+            Text(
+                positioned
+                    ? 'Calculated from your shared coordinates'
+                    : 'Saved distance · Add both locations to calculate',
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: mutedInk, fontSize: 12)),
+          ])),
+      gap(16),
       FilledButton.icon(
           onPressed: state.busy
               ? null
@@ -749,7 +877,10 @@ class OurMap extends StatelessWidget {
                 state.busy ? null : () => state.run(state.stopSharingLocation),
             child: const Text('Stop sharing location')),
       ...[
-        const Text('Our places around the world'),
+        Align(
+            alignment: Alignment.centerLeft,
+            child: Text('Our places around the world',
+                style: Theme.of(context).textTheme.titleLarge)),
         gap(8),
         Semantics(
             label: points
@@ -773,6 +904,25 @@ class WorldMap extends StatefulWidget {
 
 class _WorldMapState extends State<WorldMap> {
   final controller = MapController();
+  late final Future<List<Polygon<Object>>> land = _loadLand();
+
+  Future<List<Polygon<Object>>> _loadLand() async {
+    final source = await rootBundle.loadString('assets/maps/land.json');
+    final contours = jsonDecode(source) as List;
+    return contours.map((outline) {
+      final points = (outline as List).map((pair) {
+        final coordinates = pair as List;
+        return LatLng((coordinates[1] as num).toDouble(),
+            (coordinates[0] as num).toDouble());
+      }).toList();
+      return Polygon<Object>(
+          points: points,
+          color: const Color(0xFFE6DCE7),
+          borderColor: const Color(0xFFD0BFCE),
+          borderStrokeWidth: .5);
+    }).toList();
+  }
+
   @override
   void dispose() {
     controller.dispose();
@@ -786,79 +936,90 @@ class _WorldMapState extends State<WorldMap> {
             (p['longitude'] as num).toDouble()))
         .toList();
     return ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: Stack(children: [
-          FlutterMap(
+      borderRadius: BorderRadius.circular(20),
+      child: FutureBuilder<List<Polygon<Object>>>(
+        future: land,
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return const ColoredBox(
+              color: Color(0xFFF8F2F6),
+              child: Center(child: Text('Loading map…')),
+            );
+          }
+          return Stack(children: [
+            FlutterMap(
               mapController: controller,
               options: MapOptions(
+                backgroundColor: const Color(0xFFF8F2F6),
                 initialCenter:
-                    points.isEmpty ? const LatLng(43.24, 76.92) : points.first,
-                initialZoom: points.length == 1 ? 13 : 3,
+                    points.isEmpty ? const LatLng(35, 30) : points.first,
+                initialZoom: points.length > 1 ? 3 : 1.7,
                 initialCameraFit: points.length > 1
                     ? CameraFit.coordinates(
                         coordinates: points,
                         padding: const EdgeInsets.all(45),
-                        maxZoom: 15)
+                        maxZoom: 5)
                     : null,
-                maxZoom: 19,
+                maxZoom: 6,
               ),
               children: [
-                TileLayer(
-                    urlTemplate:
-                        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                    userAgentPackageName: 'app.near.couples'),
+                PolygonLayer<Object>(polygons: snapshot.data!),
                 MarkerLayer(markers: [
                   for (var i = 0; i < points.length; i++)
                     Marker(
-                        point: points[i],
-                        width: 48,
-                        height: 48,
-                        child: Tooltip(
-                            message:
-                                widget.points[i]['title'] as String? ?? 'Place',
-                            child: IconButton(
-                                onPressed: () => showModalBottomSheet<void>(
-                                    context: context,
-                                    builder: (_) => SafeArea(
-                                        child: Padding(
-                                            padding: const EdgeInsets.all(24),
-                                            child: Text(
-                                                widget.points[i]['title']
-                                                        as String? ??
-                                                    'Place',
-                                                style: Theme.of(context)
-                                                    .textTheme
-                                                    .titleLarge)))),
-                                icon: const Icon(Icons.location_on,
-                                    color: coral, size: 38))))
+                      point: points[i],
+                      width: 48,
+                      height: 48,
+                      child: Tooltip(
+                        message:
+                            widget.points[i]['title'] as String? ?? 'Place',
+                        child: IconButton(
+                          onPressed: () => showModalBottomSheet<void>(
+                            context: context,
+                            builder: (_) => SafeArea(
+                              child: Padding(
+                                padding: const EdgeInsets.all(24),
+                                child: Text(
+                                    widget.points[i]['title'] as String? ??
+                                        'Place',
+                                    style:
+                                        Theme.of(context).textTheme.titleLarge),
+                              ),
+                            ),
+                          ),
+                          icon: const Icon(Icons.location_on,
+                              color: coral, size: 38),
+                        ),
+                      ),
+                    ),
                 ]),
-                RichAttributionWidget(attributions: [
-                  TextSourceAttribution('OpenStreetMap contributors',
-                      onTap: () => launchUrl(
-                          Uri.parse('https://www.openstreetmap.org/copyright')))
-                ]),
-              ]),
-          Positioned(
+              ],
+            ),
+            Positioned(
               top: 8,
               right: 8,
               child: Column(children: [
                 FloatingActionButton.small(
                     heroTag: null,
                     onPressed: () => controller.move(controller.camera.center,
-                        (controller.camera.zoom + 1).clamp(1, 19)),
+                        (controller.camera.zoom + 1).clamp(1, 6)),
                     child: const Icon(Icons.add)),
                 const SizedBox(height: 8),
                 FloatingActionButton.small(
                     heroTag: null,
                     onPressed: () => controller.move(controller.camera.center,
-                        (controller.camera.zoom - 1).clamp(1, 19)),
+                        (controller.camera.zoom - 1).clamp(1, 6)),
                     child: const Icon(Icons.remove)),
                 const SizedBox(height: 8),
                 FloatingActionButton.small(
                     heroTag: null,
                     onPressed: () => controller.rotate(0),
                     child: const Icon(Icons.explore_outlined)),
-              ])),
-        ]));
+              ]),
+            ),
+          ]);
+        },
+      ),
+    );
   }
 }

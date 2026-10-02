@@ -48,12 +48,12 @@ Widget app(AppState state, Widget child) => ChangeNotifierProvider.value(
         theme: nearTheme(),
         home: Scaffold(body: child)));
 void main() {
-  testWidgets('Both answers remain hidden until Reveal is tapped',
+  testWidgets('Partner answer stays hidden until Reveal is tapped',
       (tester) async {
     final state = fixture();
     await tester
         .pumpWidget(app(state, QuestionCard(data: state.home!, today: true)));
-    expect(find.textContaining('northern lights'), findsNothing);
+    expect(find.textContaining('northern lights'), findsOneWidget);
     expect(find.textContaining('road trip'), findsNothing);
     await tester.tap(find.text('Reveal our answers'));
     await tester.pump();
@@ -75,16 +75,11 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(320, 760));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(app(fixture(), const MainShell()));
-    for (final label in [
-      'Daily Photo',
-      'Dates',
-      'Countdown',
-      'Questions',
-      'Home'
-    ]) {
+    expect(tester.takeException(), isNull, reason: 'initial Home');
+    for (final label in ['Daily', 'Dates', 'Closer', 'Prompts', 'Home']) {
       await tester.tap(find.text(label).last);
       await tester.pumpAndSettle();
-      expect(tester.takeException(), isNull);
+      expect(tester.takeException(), isNull, reason: label);
     }
     await tester.pumpWidget(const SizedBox());
   });
@@ -92,25 +87,38 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(390, 900));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(app(fixture(), const MainShell()));
-    await tester.tap(find.text('Questions').last);
+    await tester.tap(find.text('Prompts').last);
     await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('Reveal our answers').last);
-    await tester.tap(find.text('Reveal our answers').last);
+    final reveal = find.descendant(
+        of: find.byType(QuestionsScreen),
+        matching: find.text('Reveal our answers'));
+    await tester.ensureVisible(reveal);
+    await tester.pumpAndSettle();
+    await tester.tap(reveal);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Home').last);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Questions').last);
+    await tester.tap(find.text('Prompts').last);
     await tester.pumpAndSettle();
-    expect(find.textContaining('northern lights'), findsOneWidget);
+    expect(find.textContaining('road trip'), findsOneWidget);
     await tester.pumpWidget(const SizedBox());
   });
-  testWidgets('Home design preview', (tester) async {
+  testWidgets('Main screen design previews', (tester) async {
     await tester.binding.setSurfaceSize(const Size(430, 1500));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final font = File('assets/fonts/Inter.ttf');
     if (font.existsSync()) {
       final loader = FontLoader('Inter')
         ..addFont(Future.value(ByteData.sublistView(font.readAsBytesSync())));
+      await tester.runAsync(() => loader.load());
+    }
+    for (final entry in [
+      ('Newsreader', 'assets/fonts/stitch/Newsreader-Regular.ttf'),
+      ('Plus Jakarta Sans', 'assets/fonts/stitch/PlusJakartaSans-Regular.ttf'),
+    ]) {
+      final loader = FontLoader(entry.$1)
+        ..addFont(Future.value(
+            ByteData.sublistView(File(entry.$2).readAsBytesSync())));
       await tester.runAsync(() => loader.load());
     }
     final icons = FontLoader('MaterialIcons')
@@ -126,14 +134,27 @@ void main() {
     expect(tester.takeException(), isNull);
     final boundary =
         key.currentContext!.findRenderObject() as RenderRepaintBoundary;
-    await tester.runAsync(() async {
-      final image = await boundary.toImage(pixelRatio: 2);
-      final data = await image.toByteData(format: ui.ImageByteFormat.png);
-      Directory('preview').createSync();
-      File('preview/near-home.png')
-          .writeAsBytesSync(data!.buffer.asUint8List());
-      image.dispose();
-    });
+    Future<void> capture(String name) async {
+      await tester.runAsync(() async {
+        final image = await boundary.toImage(pixelRatio: 2);
+        final data = await image.toByteData(format: ui.ImageByteFormat.png);
+        Directory('preview').createSync();
+        File('preview/$name.png').writeAsBytesSync(data!.buffer.asUint8List());
+        image.dispose();
+      });
+    }
+
+    await capture('near-home');
+    for (final entry in [
+      ('Daily', 'near-daily'),
+      ('Dates', 'near-dates'),
+      ('Closer', 'near-closer'),
+      ('Prompts', 'near-prompts'),
+    ]) {
+      await tester.tap(find.text(entry.$1).last);
+      await tester.pumpAndSettle();
+      await capture(entry.$2);
+    }
     await tester.pumpWidget(const SizedBox());
   });
 }

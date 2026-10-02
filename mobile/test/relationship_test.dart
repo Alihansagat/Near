@@ -101,7 +101,8 @@ AppState stateWith(RelationshipApi api) {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(() {
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
       const MethodChannel('plugins.flutter.io/path_provider'),
       (call) async => Directory.systemTemp.path,
     );
@@ -223,6 +224,15 @@ void main() {
     if (font.existsSync()) {
       final loader = FontLoader('Inter')
         ..addFont(Future.value(ByteData.sublistView(font.readAsBytesSync())));
+      await tester.runAsync(loader.load);
+    }
+    for (final entry in [
+      ('Newsreader', 'assets/fonts/stitch/Newsreader-Regular.ttf'),
+      ('Plus Jakarta Sans', 'assets/fonts/stitch/PlusJakartaSans-Regular.ttf'),
+    ]) {
+      final loader = FontLoader(entry.$1)
+        ..addFont(Future.value(
+            ByteData.sublistView(File(entry.$2).readAsBytesSync())));
       await tester.runAsync(loader.load);
     }
     final icons = FontLoader('MaterialIcons')
